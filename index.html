@@ -4,44 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced Data Analysis Showcase</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Link to your external CSS file -->
-    <script src="script.js" defer></script> <!-- Load your script.js file with defer attribute -->
+    <style>
+        /* Your existing CSS goes here */
+
+        /* Additional styles for new sections */
+        #d3Visualization, #chartJsVisualization {
+            flex: 1;
+            background-color: #222;
+            padding: 20px;
+            border: 2px solid #444;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            margin: 20px;
+            color: #ddd;
+        }
+
+        #dataAnalysis {
+            margin-top: 20px;
+            background-color: #222;
+            padding: 20px;
+            border: 2px solid #444;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            color: #ddd;
+        }
+
+        /* Add more styles for new sections as needed */
+    </style>
 </head>
 <body>
-    <header>
-        <h1>Advanced Data Analysis Showcase</h1>
-    </header>
 
-    <!-- File Input and Process Button -->
-    <div class="input-container">
-        <input type="file" id="fileInput">
-        <button onclick="processFile()">Process</button>
+<!-- Your existing HTML content -->
+
+<!-- Data Visualizations and Analysis Sections -->
+<div style="margin-top: 20px; display: flex; justify-content: space-between;">
+
+    <!-- D3.js Visualization -->
+    <div id="d3Visualization">
+        <!-- D3.js visualization content goes here -->
     </div>
 
-    <!-- Data Visualizations and Analysis Sections -->
-    <div class="visualization-container">
-        <div id="d3Visualization" class="visualization">
-            <!-- D3.js visualization content goes here -->
-        </div>
-
-        <div id="chartJsVisualization" class="visualization">
-            <!-- Chart.js visualization content goes here -->
-        </div>
+    <!-- Chart.js Creative Visualization -->
+    <div id="chartJsVisualization">
+        <!-- Chart.js visualization content goes here -->
     </div>
 
-    <!-- Data Processing and Analysis Section -->
-    <div id="dataAnalysis" class="data-section">
-        <!-- Data processing content goes here -->
-    </div>
+</div>
 
-    <!-- Aggregate Metrics Section -->
-    <div id="aggregateMetrics" class="data-section">
-        <!-- Aggregate metrics content goes here -->
-    </div>
+<!-- Data Processing and Analysis Section -->
+<div id="dataAnalysis">
+    <!-- TensorFlow.js data processing content goes here -->
+    <!-- PapaParse CSV parsing content goes here -->
+    <!-- Math.js calculations content goes here -->
+    <!-- Lodash data manipulation content goes here -->
+    <!-- Date-fns date manipulation content goes here -->
+    <!-- Simple-statistics statistical analysis content goes here -->
+    <!-- Ag-Grid data presentation content goes here -->
+    <!-- Custom metrics calculations content goes here -->
+</div>
 
-    <footer>
-        <p>&copy; 2023 Advanced Data Analysis Showcase</p>
-    </footer>
+<!-- Load Libraries -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.10.0/math.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns@2.23.0"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.1.1/simple-statistics.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@27.1.1/dist/ag-grid-community.min.js"></script>
+
+<!-- Your existing JavaScript content -->
+
 </body>
 </html>
-
