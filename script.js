@@ -197,68 +197,36 @@ async function trainAndVisualize() {
     try {
         updateStatus("Initializing...");
 
-        // Convert data into tensors
-        updateStatus("Converting data into tensors...");
-        const totalRevenuesTensor = tf.tensor(totalRevenues);
+        // Convert data into tensors for training
+        const xs = tf.tensor2d(totalRevenues.slice(0, -1), [totalRevenues.length - 1, 1]);
+        const ys = tf.tensor2d(totalRevenues.slice(1), [totalRevenues.length - 1, 1]);
 
-        // Create labels
-        updateStatus("Generating labels...");
-        const labelsTensor = tf.tensor(totalRevenues.map(revenue => {
-            if (revenue > 50000000) return 2;       // High
-            else if (revenue > 10000000) return 1;  // Medium
-            else return 0;                          // Low
-        }));
-
-        // Check for NaN values in tensors
-        if (totalRevenuesTensor.any(tf.isnan).arraySync()[0] || labelsTensor.any(tf.isnan).arraySync()[0]) {
-            throw new Error("NaN values detected in data tensors.");
-        }
-
-        // Model creation
-        updateStatus("Setting up the model...");
+        // Model creation for regression
         const model = tf.sequential();
-        model.add(tf.layers.dense({units: 3, activation: 'softmax', inputShape: [1]}));
+        model.add(tf.layers.dense({units: 1, inputShape: [1]}));
+        
+        // Compile model
+        model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
 
-        // Compile the model
-        updateStatus("Compiling the model...");
-        model.compile({
-            loss: 'sparseCategoricalCrossentropy',
-            optimizer: tf.train.adam(),
-            metrics: ['accuracy']
-        });
+        // Train model
+        updateStatus("Training model...");
+        await model.fit(xs, ys, {epochs: 250});
 
-        // Train the model
-        updateStatus("Training the model. Please wait...");
-        await model.fit(totalRevenuesTensor, labelsTensor, {
-            epochs: 10,
-            callbacks: {
-                onEpochEnd: (epoch, logs) => {
-                    updateStatus(`Epoch ${epoch + 1}: loss=${logs.loss.toFixed(4)}`);
-                }
-            }
-        });
-
-        // Predictions
-        updateStatus("Making predictions...");
-        const predictions = model.predict(totalRevenuesTensor);
-
-        // Check for NaN values in predictions
-        if (predictions.any(tf.isnan).arraySync()[0]) {
-            throw new Error("NaN values detected in predictions.");
-        }
+        // Predict the next revenue value
+        const nextValueTensor = model.predict(tf.tensor2d([totalRevenues[totalRevenues.length - 1]], [1, 1]));
+        const nextValue = nextValueTensor.dataSync()[0];
+        const forecastedRevenues = [...totalRevenues, nextValue];
 
         // Visualization
-        updateStatus("Visualizing the data...");
         const ctxForecast = document.getElementById('forecast').getContext('2d');
-        const labels = Array.from({ length: totalRevenues.length }, (_, i) => `Event ${i + 1}`);
-
+        const labels = Array.from({ length: forecastedRevenues.length }, (_, i) => `Event ${i + 1}`);
         new Chart(ctxForecast, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Historical Revenue ($)',
-                    data: totalRevenues,
+                    label: 'Historical + Forecasted Revenue ($)',
+                    data: forecastedRevenues,
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 1
@@ -277,6 +245,7 @@ async function trainAndVisualize() {
         });
 
         updateStatus("Visualization complete!", "success");
+
     } catch (error) {
         updateStatus("An error occurred: " + error.message, "error");
     }
