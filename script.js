@@ -1,4 +1,4 @@
-x// Global variable for data storage
+// Global variable for data storage
 let data;
 
 async function processFile() {
@@ -7,6 +7,16 @@ async function processFile() {
 
     if (!file) {
         updateStatus("No file selected.", "error");
+        return;
+    }
+
+    if (file.type !== "text/csv") {
+        updateStatus("Please upload a valid CSV file.", "error");
+        return;
+    }
+
+    if (file.size > 5000000) {  // limiting file size to 5MB
+        updateStatus("File size is too large. Please upload a file smaller than 5MB.", "error");
         return;
     }
 
@@ -23,7 +33,6 @@ async function processFile() {
         updateStatus("Visualizing data...");
         displaySegmentedData(segmentedData);
         displayMetrics(metrics);
-        initializeInteractivity();
 
         updateStatus("Visualization complete!", "success");
     } catch (error) {
@@ -84,10 +93,6 @@ function computeMetrics() {
     return {
         cumulativeRevenues: cumulativeRevenues
     };
-}
-
-function initializeInteractivity() {
-    // This is a placeholder. Ideally, you'd add event listeners here for any interactive UI components you add to the HTML.
 }
 
 function displaySegmentedData(segmentedData) {
