@@ -1,174 +1,138 @@
-// Global variable for data storage
-let data;
+document.addEventListener("DOMContentLoaded", function() {
+    const fileInput = document.getElementById("fileInput");
+    const uploadButton = document.getElementById("uploadButton");
+    const messageContainer = document.createElement("div");
+    document.body.appendChild(messageContainer);
 
-async function processFile() {
-    const fileInput = document.getElementById('fileInput');
-    const file = fileInput.files[0];
-
-    if (!file) {
-        updateStatus("No file selected.", "error");
-        return;
+    function displayMessage(message, isError = false) {
+        console.log(message);
+        const messageElement = document.createElement("p");
+        messageElement.textContent = message;
+        if (isError) {
+            messageElement.style.color = "red";
+        }
+        messageContainer.appendChild(messageElement);
     }
 
-    try {
-        updateStatus("Reading file...");
-        const fileContent = await readFile(file);
-        
-        updateStatus("Processing CSV...");
-        data = csvToJSON(fileContent);
-        if (!data || data.length === 0) {
-            updateStatus("Error processing the CSV file.", "error");
+    uploadButton.addEventListener("click", function() {
+        const file = fileInput.files[0];
+        if (!file) {
+            displayMessage("Error: Please select a file first.", true);
             return;
         }
 
-        updateStatus("Visualizing data...");
-        displayBarChart();
-        displayPieChart();
-        displayAggregateMetrics();
+        Papa.parse(file, {
+            complete: function(results) {
+                if (results.errors.length > 0) {
+                    displayMessage(`Error parsing CSV: ${results.errors[0].message}`, true);
+                    return;
+                }
 
-        updateStatus("Visualization complete!", "success");
-    } catch (error) {
-        updateStatus("An error occurred: " + error.message, "error");
-    }
-}
+                const data = results.data;
+                displayMessage("File successfully parsed. Initiating data processing...");
 
-function readFile(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = event => resolve(event.target.result);
-        reader.onerror = reject;
-        reader.readAsText(file);
+                try {
+                    processDataWithTensorFlow(data);
+                    visualizeWithD3(data);
+                    visualizeWithChartJS(data);
+                    displayWithAgGrid(data);
+                    filterDataUsingLodash(data);
+                    formatDateUsingDateFns(data);
+                    calculateMeanUsingMathJs(data);
+                    calculateCorrelationCoefficient(data, "someXColumnName", "someYColumnName");
+                } catch (error) {
+                    displayMessage(`Error processing data: ${error.message}`, true);
+                }
+            },
+            header: true,
+            skipEmptyLines: true
+        });
     });
-}
 
-function updateStatus(message, type = "info") {
-    const statusDiv = document.getElementById('status');
-    statusDiv.textContent = message;
-    statusDiv.className = type;
-}
-
-function csvToJSON(csv) {
-    const lines = csv.trim().split('\n');
-    const result = [];
-    const headers = lines[0].split(',');
-
-    for (let i = 1; i < lines.length; i++) {
-        const obj = {};
-        const currentLine = lines[i].split(',');
-        for (let j = 0; j < headers.length; j++) {
-            obj[headers[j]] = currentLine[j];
-        }
-        result.push(obj);
+    function processDataWithTensorFlow(data) {
+        displayMessage("Processing data with TensorFlow.js...");
+        // Placeholder: Assume numeric data and normalize it
+        const tensor = tf.tensor(data.map(row => parseFloat(row["someColumnName"])));
+        const normalizedTensor = tf.div(tf.sub(tensor, tf.min(tensor)), tf.sub(tf.max(tensor), tf.min(tensor)));
+        const normalizedData = normalizedTensor.dataSync();
+        data.forEach((row, index) => {
+            row["normalizedColumnName"] = normalizedData[index];
+        });
     }
-    return result;
-}
 
-function displayBarChart() {
-    const ctx = document.getElementById('visualization').getContext('2d');
-    const labels = data.map(row => row['Sponsors'] || 'Unknown');
-    const values = data.map(row => parseFloat(row['Event Breakdown'] || 0));
+    function visualizeWithD3(data) {
+        displayMessage("Generating D3.js visualization...");
+        // Placeholder: Simple bar chart with D3.js
+        const svg = d3.select("#d3js-container").append("svg").attr("width", 500).attr("height", 500);
+        svg.selectAll("rect")
+           .data(data)
+           .enter().append("rect")
+           .attr("x", (d, i) => i * 45)
+           .attr("y", d => 500 - d.someColumnName * 10)
+           .attr("width", 40)
+           .attr("height", d => d.someColumnName * 10)
+           .attr("fill", "#FF5733");
+    }
 
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Event Breakdown ($)',
-                data: values,
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true
-                    }
+    function visualizeWithChartJS(data) {
+        displayMessage("Generating Chart.js visualization...");
+        // Placeholder: Line chart with Chart.js
+        const ctx = document.getElementById("chartjs-container").getContext("2d");
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(row => row["dateColumnName"]),
+                datasets: [{
+                    label: 'Some Data Label',
+                    data: data.map(row => row["someColumnName"]),
+                    borderColor: "#FF5733",
+                    fill: false
                 }]
             },
-            plugins: {
-                zoom: {
-                    pan: {
-                        enabled: true,
-                        mode: 'xy'
-                    },
-                    zoom: {
-                        enabled: true,
-                        mode: 'xy'
-                    }
+            options: {
+                scales: {
+                    xAxes: [{
+                        type: 'time',
+                        distribution: 'series'
+                    }]
                 }
             }
-        }
-    });
-}
-
-function displayPieChart() {
-    const ctxMetrics = document.getElementById('metrics').getContext('2d');
-    const venues = [...new Set(data.map(row => row['Venue']))];
-    const venueCounts = venues.map(venue => data.filter(row => row['Venue'] === venue).length);
-
-    new Chart(ctxMetrics, {
-        type: 'pie',
-        data: {
-            labels: venues,
-            datasets: [{
-                data: venueCounts,
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.2)',
-                    'rgba(255, 206, 86, 0.2)',
-                    'rgba(75, 192, 192, 0.2)',
-                    'rgba(153, 102, 255, 0.2)',
-                    'rgba(54, 162, 235, 0.2)'
-                ],
-                borderColor: [
-                    'rgba(255, 99, 132, 1)',
-                    'rgba(255, 206, 86, 1)',
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(153, 102, 255, 1)',
-                    'rgba(54, 162, 235, 1)'
-                ],
-                borderWidth: 1
-            }]
-        }
-    });
-}
-
-function displayAggregateMetrics() {
-    const totalRevenue = data.reduce((acc, row) => acc + parseFloat(row['Total Revenue'] || 0), 0);
-    const averageEventBreakdown = data.reduce((acc, row) => acc + parseFloat(row['Event Breakdown'] || 0), 0) / data.length;
-
-    document.getElementById('aggregateMetrics').innerHTML = `
-        <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
-        <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
-    `;
-}
-
-// D3.js Tooltip for extra information on hover
-const tooltip = d3.select("body").append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0);
-
-document.getElementById('visualization').onmousemove = function(event) {
-    const index = Math.floor(event.offsetX / 100);
-    if (data[index]) {
-        tooltip.transition()
-            .duration(200)
-            .style("opacity", .9);
-        tooltip.html(`
-            Sponsors: ${data[index]['Sponsors']}<br>
-            Venue: ${data[index]['Venue']}<br>
-            Total Revenue: ${data[index]['Total Revenue']}
-        `)
-        .style("left", (event.pageX + 5) + "px")
-        .style("top", (event.pageY - 28) + "px");
+        });
     }
-};
 
-document.getElementById('visualization').onmouseout = function() {
-    tooltip.transition()
-        .duration(500)
-        .style("opacity", 0);
-};
+    function displayWithAgGrid(data) {
+        displayMessage("Presenting data using Ag-Grid...");
+        const gridOptions = {
+            columnDefs: Object.keys(data[0]).map(key => ({headerName: key, field: key})),
+            rowData: data,
+            domLayout: 'autoHeight',
+        };
+        const gridDiv = document.querySelector("#ag-grid-container");
+        new agGrid.Grid(gridDiv, gridOptions);
+    }
+
+    function filterDataUsingLodash(data) {
+        displayMessage("Filtering data using Lodash...");
+        return _.filter(data, row => parseFloat(row.someColumnName) > 50);
+    }
+
+    function formatDateUsingDateFns(data) {
+        displayMessage("Formatting dates using Date-fns...");
+        data.forEach(row => {
+            row.dateColumnName = dateFns.format(new Date(row.dateColumnName), 'MMMM dd, yyyy');
+        });
+    }
+
+    function calculateMeanUsingMathJs(data) {
+        displayMessage("Calculating mean using Math.js...");
+        const values = data.map(row => parseFloat(row.someColumnName));
+        return math.mean(values);
+    }
+
+    function calculateCorrelationCoefficient(data, xColumn, yColumn) {
+        displayMessage("Computing correlation coefficient using Simple-statistics...");
+        const xValues = data.map(row => parseFloat(row[xColumn]));
+        const yValues = data.map(row => parseFloat(row[yColumn]));
+        return simpleStats.sampleCorrelation(xValues, yValues);
+    }
+});
