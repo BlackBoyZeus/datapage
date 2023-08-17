@@ -1,169 +1,72 @@
-let df;  // This will hold our DataFrame
+let df; // global variable to store the pandas-js dataframe
 
-// Web Worker setup for offloading heavy computations
-const worker = new Worker('analysisWorker.js');
+// Event listener for file input
+document.getElementById('fileInput').addEventListener('change', previewData);
 
-// Listen for messages from the worker
-worker.onmessage = function(event) {
-    const { type, data } = event.data;
-    switch (type) {
-        case 'revenuePrediction':
-            updateRevenuePredictionVisualization(data);
-            break;
-        // Handle other message types as needed
-        // ...
-    }
-};
-
-document.getElementById('fileInput').addEventListener('change', function(event) {
+function previewData(event) {
     const file = event.target.files[0];
-    if (!file) {
-        console.error("No file selected");
-        return;
-    }
-
     const reader = new FileReader();
 
     reader.onload = function(e) {
         const data = e.target.result;
-        try {
-            df = new pd.DataFrame(data);
-            console.log("DataFrame created successfully:", df);
-        } catch (error) {
-            console.error("Error creating DataFrame:", error);
-        }
+        df = pd.read_csv(data);
+        
+        // Display first few rows of the data
+        document.getElementById('visualization').innerText = df.head().to_string();
     };
 
-    reader.onerror = function(error) {
-        console.error("Error reading file:", error);
-    }
-
     reader.readAsText(file);
-});
+}
 
-document.getElementById('startAnalysisButton').addEventListener('click', function() {
-    if (df) {
-        analyzeData();
-    } else {
-        alert("Please upload data first.");
+async function startClustering() {
+    if (!df) {
+        alert("Please upload a file first!");
+        return;
     }
-});
 
-function analyzeData() {
-    preprocessData();
-    visualizeData();
+    const features = df[['feature1', 'feature2']]; // Adjust based on your dataset's columns
+    const tensorData = tf.tensor2d(features.values);
 
-    // Send data to worker for heavy computations
-    worker.postMessage({
-        type: 'startAnalysis',
-        data: df // In a real-world scenario, you'd need to serialize the DataFrame or send raw data
-    });
+    // Here, we'd perform k-means clustering. 
+    // However, as of my last update, TensorFlow.js does not have a direct k-means function.
+    // So, you'd either use a library like KMeansJS or implement k-means yourself.
+    // For simplicity, let's assume we've done clustering and have cluster labels for each data point.
+    const clusters = mockCluster(tensorData); // Placeholder function
+
+    visualizeClusters(tensorData.arraySync(), clusters);
 }
 
-function preprocessData() {
-    // Convert 'Event Breakdown' to integers
-    df['Event Breakdown'] = df['Event Breakdown'].str.replace(',', '').astype('int');
-
-    // Handle missing values, for example by filling with defaults or removing rows
-    df = df.dropna();
+function mockCluster(data) {
+    // Placeholder function that just returns random cluster labels
+    return Array(data.length).fill().map(() => Math.floor(Math.random() * 3)); // 3 clusters as an example
 }
 
-function visualizeData() {
-    // Use D3.js to create initial visualizations
-    const svg = d3.select("#visualization");
-    const x = d3.scaleBand().domain(df['Event Breakdown']).range([0, 500]);
-    const y = d3.scaleLinear().domain([0, d3.max(df['Total Revenue'])]).range([500, 0]);
-
-    svg.selectAll('rect')
-       .data(df)
-       .enter().append('rect')
-       .attr('x', d => x(d['Event Breakdown']))
-       .attr('y', d => y(d['Total Revenue']))
-       .attr('width', x.bandwidth())
-       .attr('height', d => 500 - y(d['Total Revenue']));
-}
-
-function updateRevenuePredictionVisualization(data) {
-    const svg = d3.select("#visualization");
-    const width = 800;
-    const height = 500;
-    const margin = { top: 20, right: 20, bottom: 50, left: 50 };
-
-    // Combine historical and predicted data
-    const combinedData = df.concat(data);
-
-    const x = d3.scaleBand()
-                .domain(combinedData.map(d => d['Event Breakdown']))
-                .range([margin.left, width - margin.right])
-                .padding(0.1);
-
-    const y = d3.scaleLinear()
-                .domain([0, d3.max(combinedData, d => d['Total Revenue'])])
-                .range([height - margin.bottom, margin.top]);
-
+function visualizeClusters(data, clusters) {
     // Clear previous visualizations
-    svg.selectAll("*").remove();
+    const container = document.getElementById('visualization');
+    container.innerHTML = '';
 
-    // Create bars
-    svg.selectAll('rect')
-       .data(combinedData)
-       .enter()
-       .append('rect')
-       .attr('x', d => x(d['Event Breakdown']))
-       .attr('y', d => y(d['Total Revenue']))
-       .attr('width', x.bandwidth())
-       .attr('height', d => height - margin.bottom - y(d['Total Revenue']))
-       .attr('fill', d => 'predicted' in d ? 'orange' : 'blue') // Color predicted bars differently
-       .on('mouseover', function(d) {
-           // Display revenue details on hover
-           const tooltip = svg.append('text')
-                              .text(`Event: ${d['Event Breakdown']}, Revenue: ${d['Total Revenue']}`)
-                              .attr('x', d => x(d['Event Breakdown']))
-                              .attr('y', d => y(d['Total Revenue']) - 10)
-                              .attr('font-size', '12px')
-                              .attr('font-weight', 'bold')
-                              .attr('fill', 'black');
-       })
-       .on('mouseout', function(d) {
-           // Remove tooltip on mouseout
-           svg.selectAll('text').remove();
-       });
+    const width = 500;
+    const height = 500;
 
-    // Axes
-    svg.append('g')
-       .attr('transform', `translate(0, ${height - margin.bottom})`)
-       .call(d3.axisBottom(x));
+    // Create SVG container
+    const svg = d3.select('#visualization').append('svg')
+        .attr('width', width)
+        .attr('height', height);
 
-    svg.append('g')
-       .attr('transform', `translate(${margin.left}, 0)`)
-       .call(d3.axisLeft(y));
+    // Create scales for x and y axes
+    const xScale = d3.scaleLinear().domain([0, d3.max(data, d => d[0])]).range([0, width]);
+    const yScale = d3.scaleLinear().domain([0, d3.max(data, d => d[1])]).range([height, 0]);
 
-    // Legends
-    const legend = svg.append('g')
-                      .attr('transform', `translate(${width - margin.right - 150}, ${margin.top})`);
-
-    legend.append('rect')
-          .attr('width', 20)
-          .attr('height', 20)
-          .attr('fill', 'blue');
-
-    legend.append('text')
-          .text('Historical Data')
-          .attr('x', 30)
-          .attr('y', 15)
-          .attr('font-size', '12px');
-
-    legend.append('rect')
-          .attr('width', 20)
-          .attr('height', 20)
-          .attr('fill', 'orange')
-          .attr('y', 25);
-
-    legend.append('text')
-          .text('Predicted Revenue')
-          .attr('x', 30)
-          .attr('y', 40)
-          .attr('font-size', '12px');
+    // Create circles for each data point
+    svg.selectAll('circle')
+        .data(data)
+        .enter()
+        .append('circle')
+        .attr('cx', d => xScale(d[0]))
+        .attr('cy', d => yScale(d[1]))
+        .attr('r', 5)
+        .attr('fill', (d, i) => ["red", "green", "blue"][clusters[i]]);
 }
 
-
+document.getElementById('startAnalysisButton').addEventListener('click', startClustering);
