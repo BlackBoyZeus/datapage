@@ -1,34 +1,47 @@
 // Global variables
 let data;
 
-function processFile() {
+async function processFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
     
     if (!file) {
-        console.error("No file selected");
+        updateStatus("No file selected.", "error");
         return;
     }
 
-    // Read the file
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const fileContent = event.target.result;
+    updateStatus("Reading file...");
+    const fileContent = await readFile(file);
+    
+    updateStatus("Processing CSV...");
+    data = csvToJSON(fileContent);
+    if (!data) {
+        updateStatus("Error processing the CSV file.", "error");
+        return;
+    }
 
-        // Convert the CSV content to JSON
-        data = csvToJSON(fileContent);
-        if (!data) {
-            console.error("Error processing the CSV file.");
-            return;
-        }
+    updateStatus("Visualizing data...");
+    displayData();
+    updateStatus("Visualization complete!", "success");
+}
 
-        // Visualize the data
-        displayData();
-    };
-    reader.onerror = function() {
-        console.error("Error reading the file.");
-    };
-    reader.readAsText(file);
+function readFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            resolve(event.target.result);
+        };
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
+}
+
+function updateStatus(message, type = "info") {
+    // Display the status message on the web page
+    // You can style different types (info, error, success) differently
+    const statusDiv = document.getElementById('status');
+    statusDiv.textContent = message;
+    statusDiv.className = type;
 }
 
 function csvToJSON(csv) {
