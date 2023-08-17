@@ -3,69 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload and Process with tf.js</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Advanced Data Analysis Showcase</title>
 </head>
 <body>
 
 <!-- File Input and Process Button -->
-<div style="margin-bottom: 20px;">
+<div>
     <input type="file" id="fileInput">
     <button onclick="processFile()">Process</button>
 </div>
 
-<!-- Visualization for segmented data by Sponsors -->
-<canvas id="visualization" width="800" height="400"></canvas>
+<!-- Data Visualizations and Analysis Sections -->
+<div style="margin-top: 20px; display: flex; justify-content: space-between;">
 
-<!-- Visualization for metrics like cumulative revenue (this is a placeholder, further development required) -->
-<canvas id="metrics" width="800" height="400" style="margin-top: 20px;"></canvas>
+    <!-- D3.js Visualization -->
+    <div id="d3Visualization" style="flex: 1;">
+        <!-- D3.js visualization content goes here -->
+    </div>
 
-<!-- Div for displaying aggregate metrics such as mean, stdDev, min, and max -->
-<div id="aggregateMetrics" style="margin-top: 20px;"></div>
+    <!-- Chart.js Creative Visualization -->
+    <div id="chartJsVisualization" style="flex: 1;">
+        <!-- Chart.js visualization content goes here -->
+    </div>
 
-<!-- Status updates for user feedback -->
-<div id="status" style="margin-top: 20px;"></div>
+</div>
 
-<!-- TensorFlow.js library for data processing -->
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<!-- Data Processing and Analysis Section -->
+<div id="dataAnalysis" style="margin-top: 20px;">
+    <!-- TensorFlow.js data processing content goes here -->
+    <!-- PapaParse CSV parsing content goes here -->
+    <!-- Math.js calculations content goes here -->
+    <!-- Lodash data manipulation content goes here -->
+    <!-- Date-fns date manipulation content goes here -->
+    <!-- Simple-statistics statistical analysis content goes here -->
+    <!-- Ag-Grid data presentation content goes here -->
+    <!-- Custom metrics calculations content goes here -->
+</div>
 
-<!-- D3.js library for tooltips -->
-<script src="https://d3js.org/d3.v5.min.js"></script>
-
-<!-- Chart.js library for data visualization -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- D3.js -->
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-
-  <!-- Lodash -->
-  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
-
-  <!-- PapaParse -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-
-  <!-- math.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.8.0/math.min.js"></script>
-
-  <!-- Pandas-js -->
-  <script src="https://cdn.jsdelivr.net/npm/pandas-js@1.0.2/dist/pandas.min.js"></script>
-
-  <!-- NumJS -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/numjs/2.8.1/numjs.min.js"></script>
-
-  <!-- Date-fns -->
-  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.23.0/dist/date-fns.min.js"></script>
-
-  <!-- Ramda -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ramda/0.27.1/ramda.min.js"></script>
-
-  <!-- Simple-statistics -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.1.0/stats.min.js"></script>
-
-  <!-- Ag-Grid Community -->
-  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@27.1.1/dist/ag-grid-community.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@27.1.1/dist/styles/ag-grid.css"></script>
-  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@27.1.1/dist/styles/ag-theme-alpine.css"></script>
+<!-- Aggregate Metrics Section -->
+<div id="aggregateMetrics" style="margin-top: 20px;">
+    <!-- Aggregate metrics content goes here -->
+</div>
 
 <!-- Your custom script -->
 <script src="script.js"></script>
