@@ -1,20 +1,32 @@
+let currentData = []; // This will hold the data from the CSV
+
 // Read the uploaded CSV
 function readFile(input) {
+    console.log("Reading file...");
     let file = input.files[0];
     d3.csv(file).then(data => {
+        console.log("File read successfully.");
         preprocessData(data);
     });
 }
 
-// Convert the data into a format suitable for TensorFlow.js
+// Convert the data into a format suitable for clustering
 function preprocessData(data) {
-    let tensorData = data.map(d => [parseFloat(d.x), parseFloat(d.y)]); 
-    startClustering(tensorData);
+    console.log("Preprocessing data...");
+    currentData = data.map(d => [parseFloat(d.x), parseFloat(d.y)]); 
+    console.log("Data preprocessed.");
+}
+
+// Start clustering and visualization
+function startClustering() {
+    console.log("Starting clustering...");
+    let clusters = kMeans(currentData, 3); 
+    console.log("Clustering completed.");
+    visualizeData(clusters);
 }
 
 // K-means clustering
 function kMeans(data, k = 3) {
-    // This is a very basic implementation of k-means for demonstration purposes.
     // Initialize k centroids randomly
     let centroids = [];
     for (let i = 0; i < k; i++) {
@@ -25,29 +37,38 @@ function kMeans(data, k = 3) {
     let iterations = 0;
     while (!isEqual(centroids, previousCentroids) && iterations < 10) {
         iterations++;
+        console.log(`Iteration ${iterations}...`);
 
         // Assign each data point to the nearest centroid
-        let clusters = Array.from({ length: k }, () => []);
-        data.forEach(point => {
-            let closestCentroidIdx = centroids.map(centroid => 
-                euclideanDistance(point, centroid)).indexOf(Math.min(...centroids.map(centroid => 
-                    euclideanDistance(point, centroid))));
-            clusters[closestCentroidIdx].push(point);
-        });
+        let clusters = assignDataToCentroids(data, centroids);
 
         // Recalculate centroids
         previousCentroids = centroids.slice();
-        centroids = clusters.map(cluster => {
-            let sumX = 0, sumY = 0;
-            cluster.forEach(point => {
-                sumX += point[0];
-                sumY += point[1];
-            });
-            return [sumX / cluster.length, sumY / cluster.length];
-        });
+        centroids = recalculateCentroids(clusters);
     }
 
     return clusters;
+}
+
+function assignDataToCentroids(data, centroids) {
+    return data.reduce((clusters, point) => {
+        let closestCentroidIdx = centroids.map(centroid => 
+            euclideanDistance(point, centroid)).indexOf(Math.min(...centroids.map(centroid => 
+                euclideanDistance(point, centroid))));
+        clusters[closestCentroidIdx].push(point);
+        return clusters;
+    }, Array.from({ length: centroids.length }, () => []));
+}
+
+function recalculateCentroids(clusters) {
+    return clusters.map(cluster => {
+        let sumX = 0, sumY = 0;
+        cluster.forEach(point => {
+            sumX += point[0];
+            sumY += point[1];
+        });
+        return [sumX / cluster.length, sumY / cluster.length];
+    });
 }
 
 // Euclidean distance between two points
@@ -67,6 +88,7 @@ function isEqual(pointsA, pointsB) {
 
 // Visualize the data using Chart.js
 function visualizeData(clusters) {
+    console.log("Visualizing data...");
     let ctx = document.getElementById('visualization').getContext('2d');
     new Chart(ctx, {
         type: 'scatter',
@@ -89,6 +111,7 @@ function visualizeData(clusters) {
             }
         }
     });
+    console.log("Visualization completed.");
 }
 
 // Get a random color
@@ -100,10 +123,3 @@ function getRandomColor() {
     }
     return color;
 }
-
-// Start clustering and visualization
-function startClustering() {
-    let clusters = kMeans(tensorData, 3); 
-    visualizeData(clusters);
-}
-
