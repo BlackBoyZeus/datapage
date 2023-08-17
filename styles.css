@@ -98,3 +98,29 @@ body::before {
     pointer-events: none;
     z-index: -1;
 }
+
+/* File input styling */
+#fileInput {
+    display: none;
+}
+
+#uploadButton {
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+label[for="fileInput"] {
+    display: inline-block;
+    padding: 10px 20px;
+    color: #FF5733;
+    background-color: #111;
+    border: 2px solid #FF5733;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+label[for="fileInput"]:hover {
+    background-color: #FF5733;
+    color: #111;
+}
