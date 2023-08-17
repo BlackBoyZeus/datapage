@@ -198,22 +198,18 @@ document.getElementById('visualization').onmouseout = function() {
 };
 
 function trainAndVisualize() {
-    // Extract and preprocess 'Total Revenue'
-    const totalRevenues = data.map(row => {
-        const revenue = parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000'));
-        if (isNaN(revenue)) {
-            console.error("Invalid data in 'Total Revenue':", row);
-            throw new Error("Invalid 'Total Revenue' value detected.");
-        }
-        return revenue;
-    });
+    // Extract and preprocess 'Event Breakdown' and 'Total Revenue'
+    const eventBreakdowns = data.map(row => parseFloat(row['Event Breakdown'].replace(/,/g, '').replace(/M\+/g, '000000') || 0));
+    const totalRevenues = data.map(row => parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000') || 0));
     
-    // Calculate average growth and standard deviation
+    // Filter out invalid values
+    const validEventBreakdowns = eventBreakdowns.filter(val => !isNaN(val) && val !== 0);
+    const validTotalRevenues = totalRevenues.filter(val => !isNaN(val) && val !== 0);
+
+    // Calculate average growth and standard deviation based on 'Event Breakdown'
     let growths = [];
-    for (let i = 1; i < totalRevenues.length; i++) {
-        if (totalRevenues[i - 1] !== 0) {
-            growths.push((totalRevenues[i] - totalRevenues[i - 1]) / totalRevenues[i - 1]);
-        }
+    for (let i = 1; i < validEventBreakdowns.length; i++) {
+        growths.push((validEventBreakdowns[i] - validEventBreakdowns[i - 1]) / validEventBreakdowns[i - 1]);
     }
     const avgGrowth = growths.reduce((acc, val) => acc + val, 0) / growths.length;
     const growthStdDev = Math.sqrt(growths.map(g => Math.pow(g - avgGrowth, 2)).reduce((a, b) => a + b) / growths.length);
@@ -223,7 +219,7 @@ function trainAndVisualize() {
     let forecastedRevenues = [];
     for (let i = 0; i < numSimulations; i++) {
         const simulatedGrowth = avgGrowth + growthStdDev * (Math.random() * 2 - 1);
-        forecastedRevenues.push(totalRevenues[totalRevenues.length - 1] * (1 + simulatedGrowth));
+        forecastedRevenues.push(validTotalRevenues[validTotalRevenues.length - 1] * (1 + simulatedGrowth));
     }
 
     // Visualization
