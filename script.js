@@ -246,12 +246,25 @@ function preprocessValue(value) {
     if (typeof value === 'string') {
         value = value.replace(/,/g, '').replace(/M\+/g, '000000').replace(/K/g, '000');
     }
-    return parseFloat(value);
+    const numericValue = parseFloat(value);
+    if (isNaN(numericValue)) {
+        console.error("Invalid numeric value:", value);
+        return null;
+    }
+    return numericValue;
 }
 
-function isNumeric(value) {
-    return !isNaN(value) && typeof value === 'number';
-}
+function trainAndVisualize() {
+    // Preprocess 'Event Breakdown' and 'Total Revenue'
+    const eventBreakdowns = data.map(row => preprocessValue(row['Event Breakdown']));
+    const totalRevenues = data.map(row => preprocessValue(row['Total Revenue']));
+
+    // Check for valid values
+    if (!eventBreakdowns.every(value => value !== null) || !totalRevenues.every(value => value !== null)) {
+        updateStatus("Invalid data detected. Check the console for more details.", "error");
+        return;
+    }
+
 
 function simpleRegressionForecast(values, futureEvents) {
     // Placeholder function for demonstration. A real regression model would be more complex.
