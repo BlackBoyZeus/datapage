@@ -198,9 +198,17 @@ document.getElementById('visualization').onmouseout = function() {
 };
 
 function trainAndVisualize() {
-    // Extract numeric values from 'Total Revenue'
-    const totalRevenues = data.map(row => parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000') || 0));
+    // Extract and preprocess 'Total Revenue'
+    const totalRevenues = data.map(row => {
+        const revenue = parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000'));
+        if (isNaN(revenue)) {
+            console.error("Invalid data in 'Total Revenue':", row);
+            throw new Error("Invalid 'Total Revenue' value detected.");
+        }
+        return revenue;
+    });
     
+    // Calculate average growth and standard deviation
     let growths = [];
     for (let i = 1; i < totalRevenues.length; i++) {
         if (totalRevenues[i - 1] !== 0) {
@@ -210,11 +218,11 @@ function trainAndVisualize() {
     const avgGrowth = growths.reduce((acc, val) => acc + val, 0) / growths.length;
     const growthStdDev = Math.sqrt(growths.map(g => Math.pow(g - avgGrowth, 2)).reduce((a, b) => a + b) / growths.length);
 
-    // Monte Carlo simulation to forecast future revenue
+    // Monte Carlo simulation
     const numSimulations = 1000;
     let forecastedRevenues = [];
     for (let i = 0; i < numSimulations; i++) {
-        const simulatedGrowth = avgGrowth + growthStdDev * (Math.random() * 2 - 1);  // Assuming normal distribution
+        const simulatedGrowth = avgGrowth + growthStdDev * (Math.random() * 2 - 1);
         forecastedRevenues.push(totalRevenues[totalRevenues.length - 1] * (1 + simulatedGrowth));
     }
 
@@ -223,6 +231,7 @@ function trainAndVisualize() {
     forecastedRevenues.sort((a, b) => a - b);
     const fifthPercentile = forecastedRevenues[Math.floor(numSimulations * 0.05)];
     const ninetyFifthPercentile = forecastedRevenues[Math.floor(numSimulations * 0.95)];
+    const averageForecast = forecastedRevenues.reduce((a, b) => a + b, 0) / numSimulations;
 
     new Chart(ctxForecast, {
         type: 'line',
@@ -230,14 +239,19 @@ function trainAndVisualize() {
             labels: ['5th Percentile', 'Average', '95th Percentile'],
             datasets: [{
                 label: 'Forecasted Revenue ($)',
-                data: [fifthPercentile, totalRevenues[totalRevenues.length - 1], ninetyFifthPercentile],
+                data: [fifthPercentile, averageForecast, ninetyFifthPercentile],
                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
                 borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1
+                borderWidth: 1,
+                fill: false
             }]
         },
         options: {
             responsive: true,
+            legend: {
+                display: true,
+                position: 'top'
+            },
             scales: {
                 yAxes: [{
                     ticks: {
