@@ -22,7 +22,7 @@ async function processFile() {
         }
 
         updateStatus("Visualizing data...");
-        displayData();
+        await displayData();  // Ensure the visualization completes before updating status
         updateStatus("Visualization complete!", "success");
     } catch (error) {
         updateStatus("An error occurred: " + error.message, "error");
@@ -63,34 +63,39 @@ function csvToJSON(csv) {
 }
 
 function displayData() {
-    const labels = data.map(row => row['Sponsors'] || 'Unknown');
-    const values = data.map(row => {
-        const value = (row['Event Breakdown'] || '').replace(/,/g, '');
-        return isNaN(parseInt(value)) ? 0 : parseInt(value);
-    });
+    return new Promise((resolve) => {
+        const labels = data.map(row => row['Sponsors'] || 'Unknown');
+        const values = data.map(row => {
+            const value = (row['Event Breakdown'] || '').replace(/,/g, '');
+            return isNaN(parseInt(value)) ? 0 : parseInt(value);
+        });
 
-    const ctx = document.getElementById('visualization').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Event Breakdown ($)',
-                data: values,
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true
-                    }
+        const ctx = document.getElementById('visualization').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Event Breakdown ($)',
+                    data: values,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
                 }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            },
+            onComplete: () => {
+                resolve();  // Notify that the chart rendering is complete
             }
-        }
+        });
     });
 }
 
@@ -120,4 +125,3 @@ document.getElementById('visualization').onmouseout = function() {
         .duration(500)
         .style("opacity", 0);
 };
-
