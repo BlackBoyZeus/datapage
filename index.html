@@ -1,101 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Visualizations</title>
-    <link rel="stylesheet" href="styles.css">
-    <!-- External Libraries -->
-    <script src="https://d3js.org/d3.v6.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.3/math.min.js"></script>
-    <script src="https://lodash.com/js/lodash.core.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/date-fns/2.16.1/date-fns.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.5.0/simple-statistics.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/@ag-grid-community/core/dist/styles/ag-grid.css">
-    <link rel="stylesheet" href="https://unpkg.com/@ag-grid-community/core/dist/styles/ag-theme-alpine.css">
-    <script src="https://unpkg.com/@ag-grid-community/core"></script>
+    <title>Data Clustering with TensorFlow.js</title>
+
+    <!-- Include TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+
+    <!-- Include D3.js for visualization -->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <!-- Include pandas-js for data processing -->
+    <script src="https://cdn.jsdelivr.net/npm/pandas-js"></script>
 </head>
-
 <body>
+    
+    <!-- File Input -->
+    <input type="file" id="fileInput">
 
-    <section id="file-upload-section">
-        <h2>Upload File for Processing</h2>
-        <p>Upload your CSV or data file to visualize and process it.</p>
-       <label for="fileInput">Choose File</label>
-<input type="file" id="fileInput" />
-<button id="uploadButton">Upload & Process</button>
+    <!-- Visualization Containers -->
+    <div id="visualization"></div>
 
-    </section>
-
-    <section id="feedback-section">
-        <h2>Feedback</h2>
-        <div id="messageContainer"></div>
-    </section>
-
-    <section id="d3js-visualization">
-        <h2>D3.js Visualization</h2>
-        <div id="d3js-container"></div>
-    </section>
-
-    <section id="chartjs-visualization">
-        <h2>Chart.js Creative Visualization</h2>
-        <canvas id="chartjs-container"></canvas>
-    </section>
-
-    <section id="tensorflow-data">
-        <h2>TensorFlow.js Data Processing</h2>
-        <div id="tensorflow-container"></div>
-    </section>
-
-    <section id="papaparse-data">
-        <h2>PapaParse CSV Parsing</h2>
-        <div id="papaparse-container"></div>
-    </section>
-
-    <section id="mathjs-calculation">
-        <h2>Math.js Mathematical Calculations</h2>
-        <div id="mathjs-container"></div>
-    </section>
-
-    <section id="lodash-manipulation">
-        <h2>Lodash Data Manipulation</h2>
-        <div id="lodash-container"></div>
-    </section>
-
-    <section id="date-fns-manipulation">
-        <h2>Date-fns Date Manipulation</h2>
-        <div id="datefns-container"></div>
-    </section>
-
-    <section id="simple-statistics-analysis">
-        <h2>Simple-statistics Statistical Analysis</h2>
-        <div id="simple-statistics-container"></div>
-    </section>
-
-    <section id="ag-grid-presentation">
-        <h2>Ag-Grid Data Presentation</h2>
-        <div id="ag-grid-container" class="ag-theme-alpine" style="height: 400px;"></div>
-    </section>
-
-    <section id="custom-metrics">
-        <h2>Custom Metrics Calculations</h2>
-        <div id="custom-metrics-container"></div>
-    </section>
-
-    <section id="loader-section" style="display: none;">
-    <h2>Processing...</h2>
-    <div class="loader"></div>
-</section>
+    <!-- Controls -->
+    <button onclick="startClustering()">Cluster Data</button>
 
 
-    <!-- Main script for handling data processing and visualization -->
-    <script src="script.js"></script>
 </body>
-
 </html>
-
 
