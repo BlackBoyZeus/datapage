@@ -158,3 +158,12 @@ function updateRevenuePredictionVisualization(data) {
           .attr('y', 40)
           .attr('font-size', '12px');
 }
+
+function startClustering() {
+    if (df) {
+        analyzeData();
+    } else {
+        alert("Please upload data first.");
+    }
+}
+
