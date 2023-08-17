@@ -6,7 +6,6 @@ document.getElementById('startAnalysisButton').addEventListener('click', functio
     }
 });
 
-
 let df;  // This will hold our DataFrame
 
 // Web Worker setup for offloading heavy computations
@@ -32,10 +31,20 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
 
     reader.onload = function(e) {
         const data = e.target.result;
-        df = new pd.DataFrame(data);
+
+        try {
+            df = new pd.DataFrame(data);
+            console.log("DataFrame created successfully:", df);  // Debugging log
+        } catch (error) {
+            console.error("Error creating DataFrame:", error);
+        }
         
-        // Start the initial analysis
-        analyzeData();
+        // Optionally, you can start the initial analysis immediately after file upload
+        // analyzeData();
+    }
+
+    reader.onerror = function(error) {
+        console.error("Error reading file:", error);
     }
 
     reader.readAsText(file);
@@ -53,7 +62,7 @@ function analyzeData() {
 }
 
 function preprocessData() {
-    // Example: Convert 'Event Breakdown' to integers
+    // Convert 'Event Breakdown' to integers
     df['Event Breakdown'] = df['Event Breakdown'].str.replace(',', '').astype('int');
 
     // Handle missing values, for example by filling with defaults or removing rows
@@ -62,7 +71,6 @@ function preprocessData() {
 
 function visualizeData() {
     // Use D3.js to create initial visualizations
-    // Example: Create a bar chart of revenue by event
     const svg = d3.select("#visualization");
     const x = d3.scaleBand().domain(df['Event Breakdown']).range([0, 500]);
     const y = d3.scaleLinear().domain([0, d3.max(df['Total Revenue'])]).range([500, 0]);
@@ -159,11 +167,4 @@ function updateRevenuePredictionVisualization(data) {
           .attr('font-size', '12px');
 }
 
-function startClustering() {
-    if (df) {
-        analyzeData();
-    } else {
-        alert("Please upload data first.");
-    }
-}
 
