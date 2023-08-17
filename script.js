@@ -174,11 +174,19 @@ document.getElementById('visualization').onmouseout = function() {
 };
 
 function trainAndVisualize() {
-    // For demonstration, we're going to generate random data.
+    // Calculate average growth in revenue
+    const totalRevenues = data.map(row => parseFloat(row['Total Revenue'] || 0));
+    let growths = [];
+    for (let i = 1; i < totalRevenues.length; i++) {
+        growths.push((totalRevenues[i] - totalRevenues[i - 1]) / totalRevenues[i - 1]);
+    }
+    const avgGrowth = growths.reduce((acc, val) => acc + val, 0) / growths.length;
+
+    // Forecast future revenue based on historical data and average growth
     const forecastData = data.map(row => {
         return {
             ...row,
-            'Forecast Revenue': parseFloat(row['Total Revenue'] || 0) * (1 + (Math.random() - 0.5) * 0.2)
+            'Forecast Revenue': parseFloat(row['Total Revenue'] || 0) * (1 + avgGrowth)
         };
     });
 
@@ -191,6 +199,13 @@ function trainAndVisualize() {
         data: {
             labels: labels,
             datasets: [{
+                label: 'Historical Revenue ($)',
+                data: totalRevenues,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            },
+            {
                 label: 'Forecasted Revenue ($)',
                 data: values,
                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -210,4 +225,3 @@ function trainAndVisualize() {
         }
     });
 }
-
