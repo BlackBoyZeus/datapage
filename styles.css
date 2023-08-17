@@ -1,85 +1,100 @@
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #111;
+/* General reset and body styling */
+body, div, h2, p {
     margin: 0;
     padding: 0;
-    color: #ddd;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
+    font-family: 'Arial', sans-serif;
 }
 
-header, footer {
+body {
     background-color: #111;
-    color: #ddd;
-    text-align: center;
-    padding: 10px 0;
-    width: 100%;
+    color: #AAA;
+    overflow-x: hidden;
 }
 
-#fileInput, button {
-    padding: 10px 15px;
-    margin: 20px;
-    font-size: 16px;
-    border: 2px solid #2c3e50;
-    border-radius: 4px;
-    cursor: pointer;
-    background-color: #444;
-    color: #ddd;
-    transition: background-color 0.3s ease, transform 0.3s ease;
+/* Section styling */
+section {
+    padding: 20px;
+    margin: 20px 0;
+    border: 2px solid #333;
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.7); /* semi-transparent black */
 }
 
-button {
-    background-color: #2c3e50;
+h2 {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    color: #FF5733; /* Batmobile accent color */
+    border-bottom: 2px solid #FF5733;
+    padding-bottom: 5px;
 }
 
-button:hover {
-    background-color: #34495e;
-    transform: scale(1.05);
+div {
+    padding: 10px;
 }
 
 canvas {
     display: block;
-    background-color: #222;
     margin: 20px auto;
-    border: 2px solid #444;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
-#status, #aggregateMetrics {
+/* Batmobile inspired buttons and highlights */
+button, a {
+    display: inline-block;
     padding: 10px 20px;
-    margin: 20px;
-    border-radius: 4px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    color: #FF5733;
+    background-color: #111;
+    border: 2px solid #FF5733;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+button:hover, a:hover {
+    background-color: #FF5733;
+    color: #111;
+}
+
+/* Batmobile inspired form elements */
+input, select, textarea {
+    padding: 10px;
+    border: 1px solid #333;
     background-color: #222;
-    color: #ddd;
+    color: #AAA;
+    border-radius: 5px;
+    margin: 10px 0;
+    width: 100%;
 }
 
-.tooltip {
+/* Futuristic glow effect for some elements */
+.glow-effect {
+    box-shadow: 0 0 10px #FF5733;
+    text-shadow: 0 0 10px #FF5733;
+}
+
+/* Ag-Grid styles */
+.ag-theme-alpine {
+    height: 400px;
+    width: 100%;
+    color: #AAA;
+    background-color: #111;
+}
+
+/* Additional Batmobile inspired design elements */
+/* Maybe some diagonal stripes or other patterns to give a techy feel */
+body::before {
+    content: '';
     position: absolute;
-    text-align: center;
-    padding: 8px;
-    font-size: 14px;
-    background: #333;
-    color: #ddd;
-    border-radius: 4px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+      -45deg,
+      rgba(0, 0, 0, 0.2),
+      rgba(0, 0, 0, 0.2) 10px,
+      rgba(0, 0, 0, 0.3) 10px,
+      rgba(0, 0, 0, 0.3) 20px
+    );
     pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    z-index: -1;
 }
-
-/* Status colors */
-#status.info {
-    color: blue;
-}
-
-#status.error {
-    color: red;
-}
-
-#status.success {
-    color: green;
-}
-
