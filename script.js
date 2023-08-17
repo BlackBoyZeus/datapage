@@ -173,23 +173,33 @@ document.getElementById('visualization').onmouseout = function() {
 async function trainAndVisualize() {
     try {
         updateStatus("Initializing...");
+        
+        // Preprocess data
+        const totalRevenues = data.map(row => {
+            return parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000')) || 0;
+        });
 
-        // Convert data into tensors
+        if (totalRevenues.length === 0) {
+            throw new Error("No valid 'Total Revenue' data found.");
+        }
+
         updateStatus("Converting data into tensors...");
-        const totalRevenuesTensor = tf.tensor(totalRevenues);
+        const totalRevenuesTensor = tf.tensor(totalRevenues).expandDims(1);
 
-        // Create labels
+        // Create labels for classification
         updateStatus("Generating labels...");
-        const labelsTensor = tf.tensor(totalRevenues.map(revenue => {
-            if (revenue > 50000000) return 2;       // High
-            else if (revenue > 10000000) return 1;  // Medium
-            else return 0;                          // Low
-        }));
+        const labels = totalRevenues.map(revenue => {
+            if (revenue > 50000000) return 2;
+            else if (revenue > 10000000) return 1;
+            else return 0;
+        });
+        const labelsTensor = tf.tensor(labels);
 
         // Model creation
         updateStatus("Setting up the model...");
         const model = tf.sequential();
-        model.add(tf.layers.dense({units: 3, activation: 'softmax', inputShape: [1]}));
+        model.add(tf.layers.dense({units: 10, activation: 'relu', inputShape: [1]}));
+        model.add(tf.layers.dense({units: 3, activation: 'softmax'}));
 
         // Compile the model
         updateStatus("Compiling the model...");
@@ -202,7 +212,7 @@ async function trainAndVisualize() {
         // Train the model
         updateStatus("Training the model. Please wait...");
         await model.fit(totalRevenuesTensor, labelsTensor, {
-            epochs: 10,
+            epochs: 100,
             callbacks: {
                 onEpochEnd: (epoch, logs) => {
                     updateStatus(`Epoch ${epoch + 1}: loss=${logs.loss.toFixed(4)}`);
@@ -210,25 +220,27 @@ async function trainAndVisualize() {
             }
         });
 
-        // Predictions
-        updateStatus("Making predictions...");
-        const predictions = model.predict(totalRevenuesTensor);
-        predictions.print();
-
         // Visualization
         updateStatus("Visualizing the data...");
         const ctxForecast = document.getElementById('forecast').getContext('2d');
-        const labels = Array.from({ length: totalRevenues.length }, (_, i) => `Event ${i + 1}`);
+        const eventLabels = Array.from({ length: totalRevenues.length }, (_, i) => `Event ${i + 1}`);
+        const predictions = model.predict(totalRevenuesTensor).argMax(1).dataSync();
 
         new Chart(ctxForecast, {
-            type: 'line',
+            type: 'bar',
             data: {
-                labels: labels,
+                labels: eventLabels,
                 datasets: [{
-                    label: 'Historical Revenue ($)',
+                    label: 'Actual Revenue ($)',
                     data: totalRevenues,
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
                     borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Predicted Category',
+                    data: predictions,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
                     borderWidth: 1
                 }]
             },
@@ -250,10 +262,5 @@ async function trainAndVisualize() {
     }
 }
 
-function updateStatus(message, type = "info") {
-    const statusDiv = document.getElementById('status');
-    statusDiv.textContent = message;
-    statusDiv.className = type;
-}
 
 
