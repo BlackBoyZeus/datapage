@@ -134,13 +134,36 @@ function displayPieChart() {
 }
 
 function displayAggregateMetrics() {
-    const totalRevenue = data.reduce((acc, row) => acc + parseFloat(row['Total Revenue'] || 0), 0);
-    const averageEventBreakdown = data.reduce((acc, row) => acc + parseFloat(row['Event Breakdown'] || 0), 0) / data.length;
+    // Validate and parse data
+    let validData = true;
+    let totalRevenueSum = 0;
+    let eventBreakdownSum = 0;
 
-    document.getElementById('aggregateMetrics').innerHTML = `
-        <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
-        <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
-    `;
+    data.forEach(row => {
+        const revenue = parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000'));
+        const breakdown = parseFloat(row['Event Breakdown'].replace(/,/g, '').replace(/M\+/g, '000000'));
+        
+        if (isNaN(revenue) || isNaN(breakdown)) {
+            validData = false;
+        } else {
+            totalRevenueSum += revenue;
+            eventBreakdownSum += breakdown;
+        }
+    });
+
+    const totalRevenue = totalRevenueSum;
+    const averageEventBreakdown = eventBreakdownSum / data.length;
+
+    if (validData) {
+        document.getElementById('aggregateMetrics').innerHTML = `
+            <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
+            <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
+        `;
+    } else {
+        document.getElementById('aggregateMetrics').innerHTML = `
+            <strong>Error:</strong> Invalid data detected.
+        `;
+    }
 }
 
 // D3.js Tooltip for extra information on hover
@@ -173,33 +196,28 @@ document.getElementById('visualization').onmouseout = function() {
 async function trainAndVisualize() {
     try {
         updateStatus("Initializing...");
-        
-        // Preprocess data
-        const totalRevenues = data.map(row => {
-            return parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000')) || 0;
-        });
 
-        if (totalRevenues.length === 0) {
-            throw new Error("No valid 'Total Revenue' data found.");
-        }
-
+        // Convert data into tensors
         updateStatus("Converting data into tensors...");
-        const totalRevenuesTensor = tf.tensor(totalRevenues).expandDims(1);
+        const totalRevenuesTensor = tf.tensor(totalRevenues);
 
-        // Create labels for classification
+        // Create labels
         updateStatus("Generating labels...");
-        const labels = totalRevenues.map(revenue => {
-            if (revenue > 50000000) return 2;
-            else if (revenue > 10000000) return 1;
-            else return 0;
-        });
-        const labelsTensor = tf.tensor(labels);
+        const labelsTensor = tf.tensor(totalRevenues.map(revenue => {
+            if (revenue > 50000000) return 2;       // High
+            else if (revenue > 10000000) return 1;  // Medium
+            else return 0;                          // Low
+        }));
+
+        // Check for NaN values in tensors
+        if (totalRevenuesTensor.any(tf.isnan).arraySync()[0] || labelsTensor.any(tf.isnan).arraySync()[0]) {
+            throw new Error("NaN values detected in data tensors.");
+        }
 
         // Model creation
         updateStatus("Setting up the model...");
         const model = tf.sequential();
-        model.add(tf.layers.dense({units: 10, activation: 'relu', inputShape: [1]}));
-        model.add(tf.layers.dense({units: 3, activation: 'softmax'}));
+        model.add(tf.layers.dense({units: 3, activation: 'softmax', inputShape: [1]}));
 
         // Compile the model
         updateStatus("Compiling the model...");
@@ -212,7 +230,7 @@ async function trainAndVisualize() {
         // Train the model
         updateStatus("Training the model. Please wait...");
         await model.fit(totalRevenuesTensor, labelsTensor, {
-            epochs: 100,
+            epochs: 10,
             callbacks: {
                 onEpochEnd: (epoch, logs) => {
                     updateStatus(`Epoch ${epoch + 1}: loss=${logs.loss.toFixed(4)}`);
@@ -220,27 +238,29 @@ async function trainAndVisualize() {
             }
         });
 
+        // Predictions
+        updateStatus("Making predictions...");
+        const predictions = model.predict(totalRevenuesTensor);
+
+        // Check for NaN values in predictions
+        if (predictions.any(tf.isnan).arraySync()[0]) {
+            throw new Error("NaN values detected in predictions.");
+        }
+
         // Visualization
         updateStatus("Visualizing the data...");
         const ctxForecast = document.getElementById('forecast').getContext('2d');
-        const eventLabels = Array.from({ length: totalRevenues.length }, (_, i) => `Event ${i + 1}`);
-        const predictions = model.predict(totalRevenuesTensor).argMax(1).dataSync();
+        const labels = Array.from({ length: totalRevenues.length }, (_, i) => `Event ${i + 1}`);
 
         new Chart(ctxForecast, {
-            type: 'bar',
+            type: 'line',
             data: {
-                labels: eventLabels,
+                labels: labels,
                 datasets: [{
-                    label: 'Actual Revenue ($)',
+                    label: 'Historical Revenue ($)',
                     data: totalRevenues,
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
                     borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }, {
-                    label: 'Predicted Category',
-                    data: predictions,
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
                     borderWidth: 1
                 }]
             },
@@ -261,6 +281,3 @@ async function trainAndVisualize() {
         updateStatus("An error occurred: " + error.message, "error");
     }
 }
-
-
-
