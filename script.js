@@ -197,6 +197,9 @@ async function trainAndVisualize() {
     try {
         updateStatus("Initializing...");
 
+        // Extract 'Total Revenue' values from the data
+        const totalRevenues = data.map(row => parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000') || 0));
+        
         // Convert data into tensors for training
         const xs = tf.tensor2d(totalRevenues.slice(0, -1), [totalRevenues.length - 1, 1]);
         const ys = tf.tensor2d(totalRevenues.slice(1), [totalRevenues.length - 1, 1]);
