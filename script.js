@@ -18,6 +18,8 @@ document.addEventListener("DOMContentLoaded", function() {
             displayMessage("Error: Please select a file first.", true);
             return;
         }
+        // Show the loader during processing
+        document.getElementById("loader-section").style.display = "block";
 
         Papa.parse(file, {
             complete: function(results) {
@@ -29,15 +31,21 @@ document.addEventListener("DOMContentLoaded", function() {
                 const data = results.data;
                 const processedData = processDataWithTensorFlow(data);
 
-                // Calculations and feedback
-                calculateStatistics(processedData);
-
-                // Visualization
                 createD3BarChart(processedData);
                 createChartJSLineChart(processedData);
-
-                // Tabular data presentation
                 displayDataWithAgGrid(processedData);
+                
+                const filteredData = filterDataWithLodash(processedData);
+                const dateFormattedData = formatDatesWithDataFns(filteredData);
+                
+                const meanValue = calculateMeanWithValue(dateFormattedData);
+                const correlationCoefficient = calculateCorrelationCoefficient(dateFormattedData);
+
+                displayMessage(`Mean of value1: ${meanValue}`);
+                displayMessage(`Correlation Coefficient between value1 and value2: ${correlationCoefficient}`);
+
+                // Hide the loader when processing finishes
+                document.getElementById("loader-section").style.display = "none";
             },
             header: true,
             skipEmptyLines: true
