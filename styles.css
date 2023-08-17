@@ -1,141 +1,70 @@
-/* General reset and body styling */
-body, div, h2, p {
-    margin: 0;
-    padding: 0;
-    font-family: 'Arial', sans-serif;
-}
+ /* Basic Reset */
+    body, div, h1, h2, p {
+        margin: 0;
+        padding: 0;
+        font-family: 'Arial', sans-serif;
+    }
 
-body {
-    background-color: #111;
-    color: #AAA;
-    overflow-x: hidden;
-}
+    body {
+        background-color: #121212;  /* Dark background */
+        color: #EFEFEF;  /* Light text */
+    }
 
-/* Section styling */
-section {
-    padding: 20px;
-    margin: 20px 0;
-    border: 2px solid #333;
-    border-radius: 10px;
-    background-color: rgba(0, 0, 0, 0.7); /* semi-transparent black */
-}
+    #fileInput, button {
+        display: block;
+        margin: 20px auto;
+    }
 
-h2 {
-    font-size: 1.5em;
-    margin-bottom: 10px;
-    color: #FF5733; /* Batmobile accent color */
-    border-bottom: 2px solid #FF5733;
-    padding-bottom: 5px;
-}
+    /* File Input Styles */
+    #fileInput {
+        background-color: #333;
+        border: none;
+        border-radius: 5px;
+        color: #EFEFEF;
+        padding: 10px 20px;
+        cursor: pointer;
+    }
 
-div {
-    padding: 10px;
-}
+    #fileInput:hover {
+        background-color: #555;
+    }
 
-canvas {
-    display: block;
-    margin: 20px auto;
-}
+    /* Visualization Container */
+    #visualization {
+        max-width: 90%;
+        height: 500px;  /* Adjust as needed */
+        margin: 40px auto;
+        background-color: rgba(0, 0, 0, 0.8);  /* Semi-transparent black */
+        border-radius: 10px;
+        box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.2);  /* Subtle glow */
+    }
 
-/* Batmobile inspired buttons and highlights */
-button, a {
-    display: inline-block;
-    padding: 10px 20px;
-    color: #FF5733;
-    background-color: #111;
-    border: 2px solid #FF5733;
-    border-radius: 5px;
-    text-decoration: none;
-    transition: background-color 0.3s, color 0.3s;
-}
+    /* Controls */
+    button {
+        background-color: #FF4500;  /* Iron Man Red */
+        border: none;
+        border-radius: 5px;
+        color: #EFEFEF;
+        font-weight: bold;
+        padding: 10px 20px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
 
-button:hover, a:hover {
-    background-color: #FF5733;
-    color: #111;
-}
+    button:hover {
+        background-color: #FF6347;  /* Lighter Red on hover */
+    }
 
-/* Batmobile inspired form elements */
-input, select, textarea {
-    padding: 10px;
-    border: 1px solid #333;
-    background-color: #222;
-    color: #AAA;
-    border-radius: 5px;
-    margin: 10px 0;
-    width: 100%;
-}
-
-/* Futuristic glow effect for some elements */
-.glow-effect {
-    box-shadow: 0 0 10px #FF5733;
-    text-shadow: 0 0 10px #FF5733;
-}
-
-/* Ag-Grid styles */
-.ag-theme-alpine {
-    height: 400px;
-    width: 100%;
-    color: #AAA;
-    background-color: #111;
-}
-
-/* Additional Batmobile inspired design elements */
-/* Maybe some diagonal stripes or other patterns to give a techy feel */
-body::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: repeating-linear-gradient(
-      -45deg,
-      rgba(0, 0, 0, 0.2),
-      rgba(0, 0, 0, 0.2) 10px,
-      rgba(0, 0, 0, 0.3) 10px,
-      rgba(0, 0, 0, 0.3) 20px
-    );
-    pointer-events: none;
-    z-index: -1;
-}
-
-/* File input styling */
-#fileInput {
-    display: none;
-}
-
-#uploadButton {
-    margin-top: 10px;
-    cursor: pointer;
-}
-
-label[for="fileInput"] {
-    display: inline-block;
-    padding: 10px 20px;
-    color: #FF5733;
-    background-color: #111;
-    border: 2px solid #FF5733;
-    border-radius: 5px;
-    text-decoration: none;
-    transition: background-color 0.3s, color 0.3s;
-}
-
-label[for="fileInput"]:hover {
-    background-color: #FF5733;
-    color: #111;
-}
-
-.loader {
-    border: 16px solid #f3f3f3;
-    border-radius: 50%;
-    border-top: 16px solid #FF5733;
-    width: 120px;
-    height: 120px;
-    animation: spin 2s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
+    /* Optional: Add some tech motifs or decorations */
+    body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        background-image: url('path_to_some_tech_pattern_or_circuit_board.png');  /* Add an appropriate techy image */
+        opacity: 0.1;  /* Subtle overlay */
+        z-index: -1;  /* Place behind content */
+    }
 
