@@ -1,29 +1,36 @@
-document.getElementById('startAnalysisButton').addEventListener('click', function() {
-    if (df) {
-        analyzeData();
-    } else {
-        alert("Please upload data first.");
+dodocument.getElementById('fileInput').addEventListener('change', function(event) {
+    console.log("File input change detected");  // Debugging log
+    
+    const file = event.target.files[0];
+    if (!file) {
+        console.error("No file selected");
+        return;
     }
+
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        const data = e.target.result;
+        console.log("File read successfully");  // Debugging log
+
+        try {
+            df = new pd.DataFrame(data);
+            console.log("DataFrame created successfully:", df);  // Debugging log
+        } catch (error) {
+            console.error("Error creating DataFrame:", error);
+        }
+        
+        // Optionally, you can start the initial analysis immediately after file upload
+        // analyzeData();
+    }
+
+    reader.onerror = function(error) {
+        console.error("Error reading file:", error);
+    }
+
+    reader.readAsText(file);
 });
 
-let df;  // This will hold our DataFrame
-
-// Web Worker setup for offloading heavy computations
-const worker = new Worker('analysisWorker.js');
-
-// Listen for messages from the worker
-worker.onmessage = function(event) {
-    const { type, data } = event.data;
-
-    // Handle messages by type
-    switch (type) {
-        case 'revenuePrediction':
-            updateRevenuePredictionVisualization(data);
-            break;
-        // Handle other message types as needed
-        // ...
-    }
-};
 
 document.getElementById('fileInput').addEventListener('change', function(event) {
     const file = event.target.files[0];
