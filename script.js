@@ -1,4 +1,4 @@
-// Global variable for data storage
+/ Global variable for data storage
 let data;
 
 async function processFile() {
@@ -137,38 +137,14 @@ function displayPieChart() {
 }
 
 function displayAggregateMetrics() {
-    // Validate and parse data
-    let validData = true;
-    const totalRevenue = data.reduce((acc, row) => {
-        const revenue = parseFloat(row['Total Revenue'] || 0);
-        if (isNaN(revenue)) {
-            validData = false;
-            console.error("Invalid data in 'Total Revenue':", row);
-        }
-        return acc + revenue;
-    }, 0);
-    
-    const averageEventBreakdown = data.reduce((acc, row) => {
-        const breakdown = parseFloat(row['Event Breakdown'] || 0);
-        if (isNaN(breakdown)) {
-            validData = false;
-            console.error("Invalid data in 'Event Breakdown':", row);
-        }
-        return acc + breakdown;
-    }, 0) / data.length;
+    const totalRevenue = data.reduce((acc, row) => acc + parseFloat(row['Total Revenue'] || 0), 0);
+    const averageEventBreakdown = data.reduce((acc, row) => acc + parseFloat(row['Event Breakdown'] || 0), 0) / data.length;
 
-    if (validData) {
-        document.getElementById('aggregateMetrics').innerHTML = `
-            <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
-            <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
-        `;
-    } else {
-        document.getElementById('aggregateMetrics').innerHTML = `
-            <strong>Error:</strong> Invalid data detected. Check the console for more details.
-        `;
-    }
+    document.getElementById('aggregateMetrics').innerHTML = `
+        <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
+        <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
+    `;
 }
-
 
 // D3.js Tooltip for extra information on hover
 const tooltip = d3.select("body").append("div")
@@ -196,84 +172,3 @@ document.getElementById('visualization').onmouseout = function() {
         .duration(500)
         .style("opacity", 0);
 };
-
-function trainAndVisualize() {
-    // Preprocess 'Event Breakdown' and 'Total Revenue'
-    const eventBreakdowns = data.map(row => preprocessValue(row['Event Breakdown']));
-    const totalRevenues = data.map(row => preprocessValue(row['Total Revenue']));
-
-    // Check for valid values
-    if (!eventBreakdowns.every(isNumeric) || !totalRevenues.every(isNumeric)) {
-        updateStatus("Invalid data detected. Ensure all values in 'Event Breakdown' and 'Total Revenue' are numeric.", "error");
-        return;
-    }
-
-    // Simple regression for forecasting (for demonstration purposes)
-    // In a real-world scenario, a more complex forecasting model may be used
-    const futureEvents = 10;
-    const forecastedRevenues = simpleRegressionForecast(eventBreakdowns, futureEvents);
-
-    // Visualization
-    const ctxForecast = document.getElementById('forecast').getContext('2d');
-    const labels = Array.from({length: eventBreakdowns.length + futureEvents}, (_, i) => i + 1);
-    
-    new Chart(ctxForecast, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Historical and Forecasted Revenue ($)',
-                data: [...totalRevenues, ...forecastedRevenues],
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true
-                    }
-                }]
-            }
-        }
-    });
-}
-
-function preprocessValue(value) {
-    if (typeof value === 'string') {
-        value = value.replace(/,/g, '').replace(/M\+/g, '000000').replace(/K/g, '000');
-    }
-    const numericValue = parseFloat(value);
-    if (isNaN(numericValue)) {
-        console.error("Invalid numeric value:", value);
-        return null;
-    }
-    return numericValue;
-}
-
-function trainAndVisualize() {
-    // Preprocess 'Event Breakdown' and 'Total Revenue'
-    const eventBreakdowns = data.map(row => preprocessValue(row['Event Breakdown']));
-    const totalRevenues = data.map(row => preprocessValue(row['Total Revenue']));
-
-    // Check for valid values
-    if (!eventBreakdowns.every(value => value !== null) || !totalRevenues.every(value => value !== null)) {
-        updateStatus("Invalid data detected. Check the console for more details.", "error");
-        return;
-    }
-
-
-function simpleRegressionForecast(values, futureEvents) {
-    // Placeholder function for demonstration. A real regression model would be more complex.
-    const avgGrowth = (values[values.length - 1] - values[0]) / values.length;
-    const forecast = [];
-    let lastValue = values[values.length - 1];
-    for (let i = 0; i < futureEvents; i++) {
-        lastValue += avgGrowth;
-        forecast.push(lastValue);
-    }
-    return forecast;
-}
