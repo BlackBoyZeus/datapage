@@ -1,4 +1,4 @@
-dodocument.getElementById('fileInput').addEventListener('change', function(event) {
+document.getElementById('fileInput').addEventListener('change', function(event) {
     console.log("File input change detected");  // Debugging log
     
     const file = event.target.files[0];
