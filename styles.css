@@ -1,13 +1,14 @@
+Css 
 body {
     font-family: 'Arial', sans-serif;
-    background-color: #111;
+    background-color: #111;  /* Dark background for Batmobile vibe */
     margin: 0;
     padding: 0;
-    color: #ddd;
+    color: #ddd;  /* Light text for contrast against dark background */
 }
 
 header, footer {
-    background-color: #111;
+    background-color: #111;  /* Maintain dark theme */
     color: #ddd;
     text-align: center;
     padding: 10px 0;
@@ -17,54 +18,38 @@ header, footer {
     padding: 10px 15px;
     margin: 20px;
     font-size: 16px;
-    border: 2px solid #2c3e50;
+    border: 2px solid #2c3e50;  /* Batmobile border */
     border-radius: 4px;
     cursor: pointer;
-    background-color: #444;
-    color: #ddd;
+    background-color: #444;  /* Darker buttons */
+    color: #ddd;  /* Light text for buttons */
     transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
 button {
-    background-color: #2c3e50;
+    background-color: #2c3e50;  /* Slightly different shade for button */
 }
 
 button:hover {
     background-color: #34495e;
-    transform: scale(1.05);
+    transform: scale(1.05);  /* Button enlarges slightly on hover for emphasis */
 }
 
 canvas {
     display: block;
-    background-color: #222;
+    background-color: #222;  /* Dark background for the canvas */
     margin: 20px auto;
-    border: 2px solid #444;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-    animation: batmobileAnimation 4s infinite;
-}
-
-@keyframes batmobileAnimation {
-    0% {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.05) rotate(180deg);
-        opacity: 0.8;
-    }
-    100% {
-        transform: scale(1) rotate(360deg);
-        opacity: 1;
-    }
+    border: 2px solid #444;  /* Dark border for canvas */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);  /* More pronounced shadow for depth */
 }
 
 #status, #aggregateMetrics {
     padding: 10px 20px;
     margin: 20px;
     border-radius: 4px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-    background-color: #222;
-    color: #ddd;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);  /* More pronounced shadow for depth */
+    background-color: #222;  /* Dark backgrounds for these elements */
+    color: #ddd;  /* Light text for better readability */
 }
 
 .tooltip {
@@ -72,40 +57,12 @@ canvas {
     text-align: center;
     padding: 8px;
     font-size: 14px;
-    background: #333;
-    color: #ddd;
+    background: #333;  /* Dark background for tooltip */
+    color: #ddd;  /* Light text for tooltip */
     border-radius: 4px;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;
-}
-
-#d3Visualization, #chartJsVisualization {
-    flex: 1;
-    background-color: #222;
-    padding: 20px;
-    border: 2px solid #444;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-    margin: 20px;
-    color: #ddd;
-}
-
-#dataAnalysis {
-    margin-top: 20px;
-    background-color: #222;
-    padding: 20px;
-    border: 2px solid #444;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-    color: #ddd;
-}
-
-#aggregateMetrics {
-    margin-top: 20px;
-    background-color: #222;
-    padding: 20px;
-    border: 2px solid #444;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-    color: #ddd;
 }
 
 /* Status colors */
