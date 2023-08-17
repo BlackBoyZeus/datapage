@@ -1,6 +1,5 @@
-// Global variables
+// Global variable for data storage
 let data;
-let tfData;
 
 async function processFile() {
     const fileInput = document.getElementById('fileInput');
@@ -11,26 +10,26 @@ async function processFile() {
         return;
     }
 
-    updateStatus("Reading file...");
-    const fileContent = await readFile(file);
+    try {
+        updateStatus("Reading file...");
+        const fileContent = await readFile(file);
+        
+        updateStatus("Processing CSV...");
+        data = csvToJSON(fileContent);
+        if (!data || data.length === 0) {
+            updateStatus("Error processing the CSV file.", "error");
+            return;
+        }
 
-    updateStatus("Processing CSV...");
-    data = csvToJSON(fileContent);
-    preprocessData(data);
+        updateStatus("Visualizing data...");
+        displayBarChart();
+        displayPieChart();
+        displayAggregateMetrics();
 
-    tfData = tf.tensor(data.map(row => parseFloat(row['Event Breakdown'] || '0')));
-
-    updateStatus("Computing statistics...");
-    const stats = computeBasicStats(tfData);
-    displayStats(stats);
-
-    updateStatus("Visualizing data...");
-    displayData();
-
-    updateStatus("Applying advanced TensorFlow.js operations...");
-    applyTFJSOperations(tfData);
-
-    updateStatus("Rocketing to Mars... Complete!", "success");
+        updateStatus("Visualization complete!", "success");
+    } catch (error) {
+        updateStatus("An error occurred: " + error.message, "error");
+    }
 }
 
 function readFile(file) {
@@ -57,61 +56,24 @@ function csvToJSON(csv) {
         const obj = {};
         const currentLine = lines[i].split(',');
         for (let j = 0; j < headers.length; j++) {
-            obj[headers[j]] = isNaN(currentLine[j]) ? currentLine[j] : parseFloat(currentLine[j]);
+            obj[headers[j]] = currentLine[j];
         }
         result.push(obj);
     }
     return result;
 }
 
-function preprocessData(data) {
-    // Fill missing values with the median of the column
-    const breakdowns = data.map(row => parseFloat(row['Event Breakdown'] || '0')).sort();
-    const median = breakdowns[Math.floor(breakdowns.length / 2)];
-
-    data.forEach(row => {
-        if (!row['Event Breakdown']) {
-            row['Event Breakdown'] = median;
-        }
-    });
-}
-
-function computeBasicStats(tensorData) {
-    const mean = tensorData.mean().arraySync();
-    const stdDev = tensorData.std().arraySync();
-    const min = tensorData.min().arraySync();
-    const max = tensorData.max().arraySync();
-
-    return { mean, stdDev, min, max };
-}
-
-function displayStats(stats) {
-    // Display the stats on the web page
-    const statsDiv = document.createElement('div');
-    statsDiv.innerHTML = `
-        <strong>Statistics</strong>
-        <p>Mean: ${stats.mean}</p>
-        <p>Standard Deviation: ${stats.stdDev}</p>
-        <p>Min: ${stats.min}</p>
-        <p>Max: ${stats.max}</p>
-    `;
-
-    document.body.appendChild(statsDiv);
-}
-
-function displayData() {
-    // Display the data using Chart.js
-    // We'll display a bar chart using sponsors as labels and event breakdown as values
-    const labels = data.map(row => row['Sponsors'] || 'Unknown');
-    const values = data.map(row => parseFloat(row['Event Breakdown'] || '0'));
-
+function displayBarChart() {
     const ctx = document.getElementById('visualization').getContext('2d');
+    const labels = data.map(row => row['Sponsors'] || 'Unknown');
+    const values = data.map(row => parseFloat(row['Event Breakdown'] || 0));
+
     new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Event Breakdown',
+                label: 'Event Breakdown ($)',
                 data: values,
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 borderColor: 'rgba(75, 192, 192, 1)',
@@ -119,22 +81,94 @@ function displayData() {
             }]
         },
         options: {
+            responsive: true,
             scales: {
                 yAxes: [{
                     ticks: {
                         beginAtZero: true
                     }
                 }]
+            },
+            plugins: {
+                zoom: {
+                    pan: {
+                        enabled: true,
+                        mode: 'xy'
+                    },
+                    zoom: {
+                        enabled: true,
+                        mode: 'xy'
+                    }
+                }
             }
         }
     });
 }
 
-function applyTFJSOperations(tensorData) {
-    // For this sample, let's normalize the data
-    const normalizedData = tensorData.sub(tensorData.min()).div(tensorData.max().sub(tensorData.min()));
-    // You can then use this normalized data for further operations, such as clustering, neural networks, etc.
+function displayPieChart() {
+    const ctxMetrics = document.getElementById('metrics').getContext('2d');
+    const venues = [...new Set(data.map(row => row['Venue']))];
+    const venueCounts = venues.map(venue => data.filter(row => row['Venue'] === venue).length);
+
+    new Chart(ctxMetrics, {
+        type: 'pie',
+        data: {
+            labels: venues,
+            datasets: [{
+                data: venueCounts,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(54, 162, 235, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(54, 162, 235, 1)'
+                ],
+                borderWidth: 1
+            }]
+        }
+    });
 }
 
+function displayAggregateMetrics() {
+    const totalRevenue = data.reduce((acc, row) => acc + parseFloat(row['Total Revenue'] || 0), 0);
+    const averageEventBreakdown = data.reduce((acc, row) => acc + parseFloat(row['Event Breakdown'] || 0), 0) / data.length;
 
+    document.getElementById('aggregateMetrics').innerHTML = `
+        <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
+        <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
+    `;
+}
 
+// D3.js Tooltip for extra information on hover
+const tooltip = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
+document.getElementById('visualization').onmousemove = function(event) {
+    const index = Math.floor(event.offsetX / 100);
+    if (data[index]) {
+        tooltip.transition()
+            .duration(200)
+            .style("opacity", .9);
+        tooltip.html(`
+            Sponsors: ${data[index]['Sponsors']}<br>
+            Venue: ${data[index]['Venue']}<br>
+            Total Revenue: ${data[index]['Total Revenue']}
+        `)
+        .style("left", (event.pageX + 5) + "px")
+        .style("top", (event.pageY - 28) + "px");
+    }
+};
+
+document.getElementById('visualization').onmouseout = function() {
+    tooltip.transition()
+        .duration(500)
+        .style("opacity", 0);
+};
