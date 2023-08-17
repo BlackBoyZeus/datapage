@@ -197,25 +197,31 @@ async function trainAndVisualize() {
     try {
         updateStatus("Initializing...");
 
-        // 1. Data Extraction and Validation
-        const totalRevenues = data.map(row => {
-            const value = parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000'));
-            if (isNaN(value)) {
-                throw new Error("Invalid data detected in 'Total Revenue'.");
+        // 1. Data Extraction
+        const totalRevenuesRaw = data.map(row => row['Total Revenue']);
+
+        // 2. Data Cleaning
+        const totalRevenues = totalRevenuesRaw.map(revenue => {
+            if (typeof revenue === 'string') {
+                if (revenue.includes('M+')) return parseFloat(revenue.replace('M+', '')) * 1000000;
+                if (revenue.includes('M')) return parseFloat(revenue.replace('M', '')) * 1000000;
+                if (revenue.includes('K')) return parseFloat(revenue.replace('K', '')) * 1000;
+                if (revenue.includes('to')) {
+                    const [start, end] = revenue.split(' to ').map(val => parseFloat(val));
+                    return (start + end) / 2;  // Average of the range
+                }
             }
-            return value;
+            return parseFloat(revenue) || 0;
         });
 
-        if (totalRevenues.length < 2) {
-            throw new Error("Insufficient data for model training.");
+        // 3. Data Validation
+        if (totalRevenues.some(val => isNaN(val) || !isFinite(val))) {
+            throw new Error("Invalid data detected. Ensure cleaned 'Total Revenue' values are numeric.");
         }
 
-        // Convert data into tensors for training
+        // 4. Model Training
         const xs = tf.tensor2d(totalRevenues.slice(0, -1), [totalRevenues.length - 1, 1]);
         const ys = tf.tensor2d(totalRevenues.slice(1), [totalRevenues.length - 1, 1]);
-
-        // 2. Model Training
-        updateStatus("Setting up the model...");
 
         const model = tf.sequential();
         model.add(tf.layers.dense({units: 1, inputShape: [1]}));
@@ -233,12 +239,11 @@ async function trainAndVisualize() {
             }
         });
 
-        // Predict the next revenue value
+        // 5. Visualization
         const nextValueTensor = model.predict(tf.tensor2d([totalRevenues[totalRevenues.length - 1]], [1, 1]));
         const nextValue = nextValueTensor.dataSync()[0];
         const forecastedRevenues = [...totalRevenues, nextValue];
 
-        // 3. Visualization
         const ctxForecast = document.getElementById('forecast').getContext('2d');
         const labels = Array.from({ length: forecastedRevenues.length }, (_, i) => `Event ${i + 1}`);
 
