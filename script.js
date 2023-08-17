@@ -137,14 +137,38 @@ function displayPieChart() {
 }
 
 function displayAggregateMetrics() {
-    const totalRevenue = data.reduce((acc, row) => acc + parseFloat(row['Total Revenue'] || 0), 0);
-    const averageEventBreakdown = data.reduce((acc, row) => acc + parseFloat(row['Event Breakdown'] || 0), 0) / data.length;
+    // Validate and parse data
+    let validData = true;
+    const totalRevenue = data.reduce((acc, row) => {
+        const revenue = parseFloat(row['Total Revenue'] || 0);
+        if (isNaN(revenue)) {
+            validData = false;
+            console.error("Invalid data in 'Total Revenue':", row);
+        }
+        return acc + revenue;
+    }, 0);
+    
+    const averageEventBreakdown = data.reduce((acc, row) => {
+        const breakdown = parseFloat(row['Event Breakdown'] || 0);
+        if (isNaN(breakdown)) {
+            validData = false;
+            console.error("Invalid data in 'Event Breakdown':", row);
+        }
+        return acc + breakdown;
+    }, 0) / data.length;
 
-    document.getElementById('aggregateMetrics').innerHTML = `
-        <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
-        <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
-    `;
+    if (validData) {
+        document.getElementById('aggregateMetrics').innerHTML = `
+            <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
+            <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
+        `;
+    } else {
+        document.getElementById('aggregateMetrics').innerHTML = `
+            <strong>Error:</strong> Invalid data detected. Check the console for more details.
+        `;
+    }
 }
+
 
 // D3.js Tooltip for extra information on hover
 const tooltip = d3.select("body").append("div")
