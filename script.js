@@ -1,3 +1,12 @@
+document.getElementById('startAnalysisButton').addEventListener('click', function() {
+    if (df) {
+        analyzeData();
+    } else {
+        alert("Please upload data first.");
+    }
+});
+
+
 let df;  // This will hold our DataFrame
 
 // Web Worker setup for offloading heavy computations
