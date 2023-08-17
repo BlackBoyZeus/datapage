@@ -198,8 +198,7 @@ document.getElementById('visualization').onmouseout = function() {
 };
 
 function trainAndVisualize() {
-    // Extract numeric values and calculate average growth in revenue
-    const eventBreakdowns = data.map(row => parseFloat(row['Event Breakdown'].replace(/,/g, '') || 0));
+    // Extract numeric values from 'Total Revenue' and calculate average growth rate
     const totalRevenues = data.map(row => parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000') || 0));
     
     let growths = [];
@@ -214,7 +213,7 @@ function trainAndVisualize() {
     const forecastData = totalRevenues.map(revenue => revenue * (1 + avgGrowth));
 
     const ctxForecast = document.getElementById('forecast').getContext('2d');
-    const labels = data.map(row => row['Sponsors'] || 'Unknown');
+    const labels = Array.from({ length: totalRevenues.length }, (_, i) => `Event ${i + 1}`);
 
     new Chart(ctxForecast, {
         type: 'line',
