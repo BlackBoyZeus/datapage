@@ -1,3 +1,50 @@
+importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs');
+importScripts('https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.3/math.min.js');
+importScripts('https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.5.0/simple-statistics.min.js');
+
+onmessage = function(e) {
+    const { type, data } = e.data;
+
+    switch(type) {
+        case 'processWithTensorFlow':
+            postMessage({ type: 'tensorflowData', data: processDataWithTensorFlow(data) });
+            break;
+        case 'calculateMean':
+            postMessage({ type: 'meanValue', data: calculateMeanWithValue(data) });
+            break;
+        case 'calculateCorrelation':
+            postMessage({ type: 'correlationCoefficient', data: calculateCorrelationCoefficient(data) });
+            break;
+        default:
+            console.error("Unknown job type", type);
+    }
+};
+
+
+const worker = new Worker('dataWorker.js');
+worker.onmessage = function(e) {
+    const { type, data } = e.data;
+
+    switch(type) {
+        case 'tensorflowData':
+            // Use the processed data for visualizations or further processing
+            createD3BarChart(data);
+            createChartJSLineChart(data);
+            displayDataWithAgGrid(data);
+            break;
+        case 'meanValue':
+            // Use the calculated mean value
+            displayMessage(`Mean of value1: ${data}`);
+            break;
+        case 'correlationCoefficient':
+            // Use the correlation coefficient
+            displayMessage(`Correlation Coefficient between value1 and value2: ${data}`);
+            break;
+        default:
+            console.error("Unknown result type", type);
+    }
+};
+
 document.addEventListener("DOMContentLoaded", function() {
     const fileInput = document.getElementById("fileInput");
     const uploadButton = document.getElementById("uploadButton");
@@ -13,20 +60,28 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     uploadButton.addEventListener("click", function() {
-        const file = fileInput.files[0];
-        if (!file) {
-            displayMessage("Error: Please select a file first.", true);
-            return;
-        }
-        // Show the loader during processing
-        document.getElementById("loader-section").style.display = "block";
+    const file = fileInput.files[0];
+    if (!file) {
+        displayMessage("Error: Please select a file first.", true);
+        return;
+    }
 
-        Papa.parse(file, {
-            complete: function(results) {
-                if (results.errors.length > 0) {
-                    displayMessage(`Error parsing CSV: ${results.errors[0].message}`, true);
-                    return;
-                }
+    Papa.parse(file, {
+        complete: function(results) {
+            if (results.errors.length > 0) {
+                displayMessage(`Error parsing CSV: ${results.errors[0].message}`, true);
+                return;
+            }
+
+            const data = results.data;
+            worker.postMessage({ type: 'processWithTensorFlow', data: data });
+            worker.postMessage({ type: 'calculateMean', data: data });
+            worker.postMessage({ type: 'calculateCorrelation', data: data });
+        },
+        header: true,
+        skipEmptyLines: true
+    });
+});
 
                 const data = results.data;
                 const processedData = processDataWithTensorFlow(data);
