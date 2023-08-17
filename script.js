@@ -4,6 +4,11 @@ let data;
 function processFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
+    
+    if (!file) {
+        console.error("No file selected");
+        return;
+    }
 
     // Read the file
     const reader = new FileReader();
@@ -12,15 +17,24 @@ function processFile() {
 
         // Convert the CSV content to JSON
         data = csvToJSON(fileContent);
+        if (!data) {
+            console.error("Error processing the CSV file.");
+            return;
+        }
 
         // Visualize the data
         displayData();
+    };
+    reader.onerror = function() {
+        console.error("Error reading the file.");
     };
     reader.readAsText(file);
 }
 
 function csvToJSON(csv) {
-    const lines = csv.split('\n');
+    const lines = csv.trim().split('\n');
+    if (lines.length <= 1) return null;  // No data rows available
+
     const result = [];
     const headers = lines[0].split(',');
 
@@ -36,9 +50,11 @@ function csvToJSON(csv) {
 }
 
 function displayData() {
-    // Assuming the 'Event Breakdown' column contains the main revenue values
-    const labels = data.map(row => row['Sponsors']);
-    const values = data.map(row => parseInt(row['Event Breakdown'].replace(/,/g, '')));
+    const labels = data.map(row => row['Sponsors'] || 'Unknown');
+    const values = data.map(row => {
+        const value = (row['Event Breakdown'] || '').replace(/,/g, '');
+        return isNaN(parseInt(value)) ? 0 : parseInt(value);
+    });
 
     const ctx = document.getElementById('visualization').getContext('2d');
     new Chart(ctx, {
