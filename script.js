@@ -1,28 +1,32 @@
-// Global variables
+// Global variable for data storage
 let data;
 
 async function processFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
-    
+
     if (!file) {
         updateStatus("No file selected.", "error");
         return;
     }
 
-    updateStatus("Reading file...");
-    const fileContent = await readFile(file);
-    
-    updateStatus("Processing CSV...");
-    data = csvToJSON(fileContent);
-    if (!data) {
-        updateStatus("Error processing the CSV file.", "error");
-        return;
-    }
+    try {
+        updateStatus("Reading file...");
+        const fileContent = await readFile(file);
+        
+        updateStatus("Processing CSV...");
+        data = csvToJSON(fileContent);
+        if (!data || data.length === 0) {
+            updateStatus("Error processing the CSV file.", "error");
+            return;
+        }
 
-    updateStatus("Visualizing data...");
-    displayData();
-    updateStatus("Visualization complete!", "success");
+        updateStatus("Visualizing data...");
+        displayData();
+        updateStatus("Visualization complete!", "success");
+    } catch (error) {
+        updateStatus("An error occurred: " + error.message, "error");
+    }
 }
 
 function readFile(file) {
@@ -37,8 +41,6 @@ function readFile(file) {
 }
 
 function updateStatus(message, type = "info") {
-    // Display the status message on the web page
-    // You can style different types (info, error, success) differently
     const statusDiv = document.getElementById('status');
     statusDiv.textContent = message;
     statusDiv.className = type;
@@ -46,8 +48,6 @@ function updateStatus(message, type = "info") {
 
 function csvToJSON(csv) {
     const lines = csv.trim().split('\n');
-    if (lines.length <= 1) return null;  // No data rows available
-
     const result = [];
     const headers = lines[0].split(',');
 
@@ -100,7 +100,7 @@ const tooltip = d3.select("body").append("div")
     .style("opacity", 0);
 
 document.getElementById('visualization').onmousemove = function(event) {
-    const index = Math.floor(event.offsetX / 100);  // Assuming each bar has a width of 100px
+    const index = Math.floor(event.offsetX / 100);
     if (data[index]) {
         tooltip.transition()
             .duration(200)
@@ -120,3 +120,4 @@ document.getElementById('visualization').onmouseout = function() {
         .duration(500)
         .style("opacity", 0);
 };
+
