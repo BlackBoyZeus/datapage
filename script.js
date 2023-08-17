@@ -93,8 +93,9 @@ function displayData() {
 
         // TensorFlow.js operations for computing mean and standard deviation.
         const tfValues = tf.tensor(values);
-        const meanValue = tfValues.mean().dataSync()[0];
-        const stdValue = tfValues.std().dataSync()[0];
+        const moments = tf.moments(tfValues);
+        const meanValue = moments.mean.dataSync()[0];
+        const stdValue = Math.sqrt(moments.variance.dataSync()[0]);
         const upperBound = meanValue + stdValue;
         const lowerBound = meanValue - stdValue;
 
