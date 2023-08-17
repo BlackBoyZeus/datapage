@@ -1,27 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Visualization with Chart.js</title>
-
-    <!-- Include TensorFlow.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-
-    <!-- Include D3.js for visualization -->
-    <script src="https://d3js.org/d3.v5.min.js"></script>
-
-    <!-- Include Chart.js for visualization -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-   
+    <title>Data Visualization</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    
-    <!-- File Input -->
-    <input type="file" id="fileInput">
+    <h1>Data Visualization</h1>
+
+    <input type="file" id="fileInput" onchange="processFile()">
+
+    <div id="status"></div>
+
+    <canvas id="visualization"></canvas>
+    <canvas id="metrics"></canvas>
+    <div id="aggregateMetrics"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
 
     <!-- Visualization Containers -->
     <div id="visualization"></div>
