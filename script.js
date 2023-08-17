@@ -29,20 +29,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
 
                 const data = results.data;
-                displayMessage("File successfully parsed. Initiating data processing...");
+                const processedData = processDataWithTensorFlow(data);
 
-                try {
-                    processDataWithTensorFlow(data);
-                    visualizeWithD3(data);
-                    visualizeWithChartJS(data);
-                    displayWithAgGrid(data);
-                    filterDataUsingLodash(data);
-                    formatDateUsingDateFns(data);
-                    calculateMeanUsingMathJs(data);
-                    calculateCorrelationCoefficient(data, "someXColumnName", "someYColumnName");
-                } catch (error) {
-                    displayMessage(`Error processing data: ${error.message}`, true);
-                }
+                // Further visualizations and processing here...
+
             },
             header: true,
             skipEmptyLines: true
@@ -51,88 +41,26 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function processDataWithTensorFlow(data) {
         displayMessage("Processing data with TensorFlow.js...");
-        // Placeholder: Assume numeric data and normalize it
-        const tensor = tf.tensor(data.map(row => parseFloat(row["someColumnName"])));
-        const normalizedTensor = tf.div(tf.sub(tensor, tf.min(tensor)), tf.sub(tf.max(tensor), tf.min(tensor)));
-        const normalizedData = normalizedTensor.dataSync();
-        data.forEach((row, index) => {
-            row["normalizedColumnName"] = normalizedData[index];
-        });
-    }
 
-    function visualizeWithD3(data) {
-        displayMessage("Generating D3.js visualization...");
-        // Placeholder: Simple bar chart with D3.js
-        const svg = d3.select("#d3js-container").append("svg").attr("width", 500).attr("height", 500);
-        svg.selectAll("rect")
-           .data(data)
-           .enter().append("rect")
-           .attr("x", (d, i) => i * 45)
-           .attr("y", d => 500 - d.someColumnName * 10)
-           .attr("width", 40)
-           .attr("height", d => d.someColumnName * 10)
-           .attr("fill", "#FF5733");
-    }
+        // Assuming data has columns 'value1', 'value2'
+        const values1 = data.map(row => parseFloat(row.value1));
+        const values2 = data.map(row => parseFloat(row.value2));
 
-    function visualizeWithChartJS(data) {
-        displayMessage("Generating Chart.js visualization...");
-        // Placeholder: Line chart with Chart.js
-        const ctx = document.getElementById("chartjs-container").getContext("2d");
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.map(row => row["dateColumnName"]),
-                datasets: [{
-                    label: 'Some Data Label',
-                    data: data.map(row => row["someColumnName"]),
-                    borderColor: "#FF5733",
-                    fill: false
-                }]
-            },
-            options: {
-                scales: {
-                    xAxes: [{
-                        type: 'time',
-                        distribution: 'series'
-                    }]
-                }
-            }
-        });
-    }
+        const tensor1 = tf.tensor(values1);
+        const tensor2 = tf.tensor(values2);
 
-    function displayWithAgGrid(data) {
-        displayMessage("Presenting data using Ag-Grid...");
-        const gridOptions = {
-            columnDefs: Object.keys(data[0]).map(key => ({headerName: key, field: key})),
-            rowData: data,
-            domLayout: 'autoHeight',
-        };
-        const gridDiv = document.querySelector("#ag-grid-container");
-        new agGrid.Grid(gridDiv, gridOptions);
-    }
+        // Example: Normalize tensors
+        const normalizedTensor1 = tensor1.sub(tensor1.min()).div(tensor1.max().sub(tensor1.min()));
+        const normalizedTensor2 = tensor2.sub(tensor2.min()).div(tensor2.max().sub(tensor2.min()));
 
-    function filterDataUsingLodash(data) {
-        displayMessage("Filtering data using Lodash...");
-        return _.filter(data, row => parseFloat(row.someColumnName) > 50);
-    }
+        // Convert tensors back to arrays
+        const normalizedValues1 = normalizedTensor1.arraySync();
+        const normalizedValues2 = normalizedTensor2.arraySync();
 
-    function formatDateUsingDateFns(data) {
-        displayMessage("Formatting dates using Date-fns...");
-        data.forEach(row => {
-            row.dateColumnName = dateFns.format(new Date(row.dateColumnName), 'MMMM dd, yyyy');
-        });
+        // Return processed data
+        return data.map((row, index) => ({
+            ...row,
+            normalizedValue1: normalizedValues1[index],
+            normalizedValue2: normalizedValues2[index]
+        }));
     }
-
-    function calculateMeanUsingMathJs(data) {
-        displayMessage("Calculating mean using Math.js...");
-        const values = data.map(row => parseFloat(row.someColumnName));
-        return math.mean(values);
-    }
-
-    function calculateCorrelationCoefficient(data, xColumn, yColumn) {
-        displayMessage("Computing correlation coefficient using Simple-statistics...");
-        const xValues = data.map(row => parseFloat(row[xColumn]));
-        const yValues = data.map(row => parseFloat(row[yColumn]));
-        return simpleStats.sampleCorrelation(xValues, yValues);
-    }
-});
