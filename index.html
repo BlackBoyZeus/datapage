@@ -8,19 +8,23 @@
 </head>
 <body>
 
-<input type="file" id="fileInput">
-<button onclick="processFile()">Process</button>
+<!-- File Input and Process Button -->
+<div style="margin-bottom: 20px;">
+    <input type="file" id="fileInput">
+    <button onclick="processFile()">Process</button>
+</div>
 
-<!-- Visualization for segmented data -->
+<!-- Visualization for segmented data by Sponsors -->
 <canvas id="visualization" width="800" height="400"></canvas>
 
-<!-- Visualization for metrics like cumulative revenue -->
+<!-- Visualization for metrics like cumulative revenue (this is a placeholder, further development required) -->
 <canvas id="metrics" width="800" height="400" style="margin-top: 20px;"></canvas>
 
-<!-- Div for displaying aggregate metrics -->
+<!-- Div for displaying aggregate metrics such as mean, stdDev, min, and max -->
 <div id="aggregateMetrics" style="margin-top: 20px;"></div>
 
-<div id="status"></div>
+<!-- Status updates for user feedback -->
+<div id="status" style="margin-top: 20px;"></div>
 
 <!-- TensorFlow.js library for data processing -->
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
