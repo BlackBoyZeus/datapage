@@ -40,6 +40,22 @@ canvas {
     margin: 20px auto;
     border: 2px solid #444;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    animation: batmobileAnimation 4s infinite;
+}
+
+@keyframes batmobileAnimation {
+    0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05) rotate(180deg);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1) rotate(360deg);
+        opacity: 1;
+    }
 }
 
 #status, #aggregateMetrics {
@@ -104,4 +120,3 @@ canvas {
 #status.success {
     color: green;
 }
-
