@@ -198,56 +198,39 @@ document.getElementById('visualization').onmouseout = function() {
 };
 
 function trainAndVisualize() {
-    // Extract and preprocess 'Event Breakdown' and 'Total Revenue'
-    const eventBreakdowns = data.map(row => parseFloat(row['Event Breakdown'].replace(/,/g, '').replace(/M\+/g, '000000') || 0));
-    const totalRevenues = data.map(row => parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000') || 0));
-    
-    // Filter out invalid values
-    const validEventBreakdowns = eventBreakdowns.filter(val => !isNaN(val) && val !== 0);
-    const validTotalRevenues = totalRevenues.filter(val => !isNaN(val) && val !== 0);
+    // Preprocess 'Event Breakdown' and 'Total Revenue'
+    const eventBreakdowns = data.map(row => preprocessValue(row['Event Breakdown']));
+    const totalRevenues = data.map(row => preprocessValue(row['Total Revenue']));
 
-    // Calculate average growth and standard deviation based on 'Event Breakdown'
-    let growths = [];
-    for (let i = 1; i < validEventBreakdowns.length; i++) {
-        growths.push((validEventBreakdowns[i] - validEventBreakdowns[i - 1]) / validEventBreakdowns[i - 1]);
+    // Check for valid values
+    if (!eventBreakdowns.every(isNumeric) || !totalRevenues.every(isNumeric)) {
+        updateStatus("Invalid data detected. Ensure all values in 'Event Breakdown' and 'Total Revenue' are numeric.", "error");
+        return;
     }
-    const avgGrowth = growths.reduce((acc, val) => acc + val, 0) / growths.length;
-    const growthStdDev = Math.sqrt(growths.map(g => Math.pow(g - avgGrowth, 2)).reduce((a, b) => a + b) / growths.length);
 
-    // Monte Carlo simulation
-    const numSimulations = 1000;
-    let forecastedRevenues = [];
-    for (let i = 0; i < numSimulations; i++) {
-        const simulatedGrowth = avgGrowth + growthStdDev * (Math.random() * 2 - 1);
-        forecastedRevenues.push(validTotalRevenues[validTotalRevenues.length - 1] * (1 + simulatedGrowth));
-    }
+    // Simple regression for forecasting (for demonstration purposes)
+    // In a real-world scenario, a more complex forecasting model may be used
+    const futureEvents = 10;
+    const forecastedRevenues = simpleRegressionForecast(eventBreakdowns, futureEvents);
 
     // Visualization
     const ctxForecast = document.getElementById('forecast').getContext('2d');
-    forecastedRevenues.sort((a, b) => a - b);
-    const fifthPercentile = forecastedRevenues[Math.floor(numSimulations * 0.05)];
-    const ninetyFifthPercentile = forecastedRevenues[Math.floor(numSimulations * 0.95)];
-    const averageForecast = forecastedRevenues.reduce((a, b) => a + b, 0) / numSimulations;
-
+    const labels = Array.from({length: eventBreakdowns.length + futureEvents}, (_, i) => i + 1);
+    
     new Chart(ctxForecast, {
         type: 'line',
         data: {
-            labels: ['5th Percentile', 'Average', '95th Percentile'],
+            labels: labels,
             datasets: [{
-                label: 'Forecasted Revenue ($)',
-                data: [fifthPercentile, averageForecast, ninetyFifthPercentile],
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1,
-                fill: false
+                label: 'Historical and Forecasted Revenue ($)',
+                data: [...totalRevenues, ...forecastedRevenues],
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
             }]
         },
         options: {
             responsive: true,
-            legend: {
-                display: true,
-                position: 'top'
-            },
             scales: {
                 yAxes: [{
                     ticks: {
@@ -257,4 +240,27 @@ function trainAndVisualize() {
             }
         }
     });
+}
+
+function preprocessValue(value) {
+    if (typeof value === 'string') {
+        value = value.replace(/,/g, '').replace(/M\+/g, '000000').replace(/K/g, '000');
+    }
+    return parseFloat(value);
+}
+
+function isNumeric(value) {
+    return !isNaN(value) && typeof value === 'number';
+}
+
+function simpleRegressionForecast(values, futureEvents) {
+    // Placeholder function for demonstration. A real regression model would be more complex.
+    const avgGrowth = (values[values.length - 1] - values[0]) / values.length;
+    const forecast = [];
+    let lastValue = values[values.length - 1];
+    for (let i = 0; i < futureEvents; i++) {
+        lastValue += avgGrowth;
+        forecast.push(lastValue);
+    }
+    return forecast;
 }
