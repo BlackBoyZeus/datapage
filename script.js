@@ -74,7 +74,7 @@ function csvToJSON(csv) {
 function segmentData() {
     const tfValues = tf.tensor(data.map(row => parseFloat(row['Event Breakdown'])));
     const mean = tfValues.mean().dataSync()[0];
-    const std = Math.sqrt(tfValues.variance().dataSync()[0]);
+    const std = Math.sqrt(tf.var(tfValues).dataSync()[0]);
 
     const highThreshold = mean + std;
     const lowThreshold = mean - std;
