@@ -1,10 +1,14 @@
-// Global variable for data storage
+// Global variable to store the processed data.
 let data;
 
+/**
+ * Main function to process the uploaded file.
+ */
 async function processFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
 
+    // Check if a file was uploaded.
     if (!file) {
         updateStatus("No file selected.", "error");
         return;
@@ -29,23 +33,36 @@ async function processFile() {
     }
 }
 
+/**
+ * Reads the content of a file.
+ * @param {File} file - The file to be read.
+ * @returns {Promise} - A promise that resolves with the file content.
+ */
 function readFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = function(event) {
-            resolve(event.target.result);
-        };
+        reader.onload = event => resolve(event.target.result);
         reader.onerror = reject;
         reader.readAsText(file);
     });
 }
 
+/**
+ * Updates the status display on the web page.
+ * @param {string} message - The message to display.
+ * @param {string} [type="info"] - The type of message (info, error, success).
+ */
 function updateStatus(message, type = "info") {
     const statusDiv = document.getElementById('status');
     statusDiv.textContent = message;
     statusDiv.className = type;
 }
 
+/**
+ * Converts a CSV string to a JSON object.
+ * @param {string} csv - The CSV string.
+ * @returns {Array} - The converted JSON data.
+ */
 function csvToJSON(csv) {
     const lines = csv.trim().split('\n');
     const result = [];
@@ -62,6 +79,10 @@ function csvToJSON(csv) {
     return result;
 }
 
+/**
+ * Visualizes the processed data using Chart.js and TensorFlow.js.
+ * @returns {Promise} - A promise that resolves when the visualization is complete.
+ */
 function displayData() {
     return new Promise((resolve) => {
         const labels = data.map(row => row['Sponsors'] || 'Unknown');
@@ -70,18 +91,53 @@ function displayData() {
             return isNaN(parseInt(value)) ? 0 : parseInt(value);
         });
 
+        // TensorFlow.js operations for computing mean and standard deviation.
+        const tfValues = tf.tensor(values);
+        const meanValue = tfValues.mean().dataSync()[0];
+        const stdValue = tfValues.std().dataSync()[0];
+        const upperBound = meanValue + stdValue;
+        const lowerBound = meanValue - stdValue;
+
         const ctx = document.getElementById('visualization').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: 'Event Breakdown ($)',
-                    data: values,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
+                datasets: [
+                    {
+                        label: 'Event Breakdown ($)',
+                        data: values,
+                        backgroundColor: values.map(value => (value > upperBound || value < lowerBound) ? 'rgba(255, 99, 132, 0.5)' : 'rgba(75, 192, 192, 0.2)'),
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Average Event Breakdown ($)',
+                        data: Array(values.length).fill(meanValue),
+                        type: 'line',
+                        fill: '-1',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 2,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Std Deviation',
+                        data: Array(values.length).fill(upperBound),
+                        type: 'line',
+                        fill: false,
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1,
+                        pointRadius: 0
+                    },
+                    {
+                        data: Array(values.length).fill(lowerBound),
+                        type: 'line',
+                        fill: false,
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1,
+                        pointRadius: 0
+                    }
+                ]
             },
             options: {
                 scales: {
@@ -93,13 +149,13 @@ function displayData() {
                 }
             },
             onComplete: () => {
-                resolve();  // Notify that the chart rendering is complete
+                resolve();
             }
         });
     });
 }
 
-// D3.js Tooltip for extra information on hover
+// D3.js Tooltip for extra information on hover.
 const tooltip = d3.select("body").append("div")
     .attr("class", "tooltip")
     .style("opacity", 0);
