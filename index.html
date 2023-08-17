@@ -4,49 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced Data Analysis Showcase</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Link to your external CSS file -->
+    <script src="script.js" defer></script> <!-- Load your script.js file with defer attribute -->
 </head>
 <body>
+    <header>
+        <h1>Advanced Data Analysis Showcase</h1>
+    </header>
 
-<!-- File Input and Process Button -->
-<div>
-    <input type="file" id="fileInput">
-    <button onclick="processFile()">Process</button>
-</div>
-
-<!-- Data Visualizations and Analysis Sections -->
-<div style="margin-top: 20px; display: flex; justify-content: space-between;">
-
-    <!-- D3.js Visualization -->
-    <div id="d3Visualization" style="flex: 1;">
-        <!-- D3.js visualization content goes here -->
+    <!-- File Input and Process Button -->
+    <div class="input-container">
+        <input type="file" id="fileInput">
+        <button onclick="processFile()">Process</button>
     </div>
 
-    <!-- Chart.js Creative Visualization -->
-    <div id="chartJsVisualization" style="flex: 1;">
-        <!-- Chart.js visualization content goes here -->
+    <!-- Data Visualizations and Analysis Sections -->
+    <div class="visualization-container">
+        <div id="d3Visualization" class="visualization">
+            <!-- D3.js visualization content goes here -->
+        </div>
+
+        <div id="chartJsVisualization" class="visualization">
+            <!-- Chart.js visualization content goes here -->
+        </div>
     </div>
 
-</div>
+    <!-- Data Processing and Analysis Section -->
+    <div id="dataAnalysis" class="data-section">
+        <!-- Data processing content goes here -->
+    </div>
 
-<!-- Data Processing and Analysis Section -->
-<div id="dataAnalysis" style="margin-top: 20px;">
-    <!-- TensorFlow.js data processing content goes here -->
-    <!-- PapaParse CSV parsing content goes here -->
-    <!-- Math.js calculations content goes here -->
-    <!-- Lodash data manipulation content goes here -->
-    <!-- Date-fns date manipulation content goes here -->
-    <!-- Simple-statistics statistical analysis content goes here -->
-    <!-- Ag-Grid data presentation content goes here -->
-    <!-- Custom metrics calculations content goes here -->
-</div>
+    <!-- Aggregate Metrics Section -->
+    <div id="aggregateMetrics" class="data-section">
+        <!-- Aggregate metrics content goes here -->
+    </div>
 
-<!-- Aggregate Metrics Section -->
-<div id="aggregateMetrics" style="margin-top: 20px;">
-    <!-- Aggregate metrics content goes here -->
-</div>
-
-<!-- Your custom script -->
-<script src="script.js"></script>
-
+    <footer>
+        <p>&copy; 2023 Advanced Data Analysis Showcase</p>
+    </footer>
 </body>
 </html>
+
