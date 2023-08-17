@@ -172,3 +172,42 @@ document.getElementById('visualization').onmouseout = function() {
         .duration(500)
         .style("opacity", 0);
 };
+
+function trainAndVisualize() {
+    // For demonstration, we're going to generate random data.
+    const forecastData = data.map(row => {
+        return {
+            ...row,
+            'Forecast Revenue': parseFloat(row['Total Revenue'] || 0) * (1 + (Math.random() - 0.5) * 0.2)
+        };
+    });
+
+    const ctxForecast = document.getElementById('forecast').getContext('2d');
+    const labels = forecastData.map(row => row['Sponsors'] || 'Unknown');
+    const values = forecastData.map(row => parseFloat(row['Forecast Revenue'] || 0));
+
+    new Chart(ctxForecast, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Forecasted Revenue ($)',
+                data: values,
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
+}
+
