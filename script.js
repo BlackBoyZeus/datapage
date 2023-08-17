@@ -11,6 +11,11 @@ document.addEventListener("DOMContentLoaded", function() {
             messageElement.style.color = "red";
         }
         messageContainer.appendChild(messageElement);
+
+        setTimeout(() => {
+            messageElement.style.opacity = "0";
+            setTimeout(() => messageElement.remove(), 500);
+        }, 5000);
     }
 
     uploadButton.addEventListener("click", function() {
@@ -27,20 +32,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     return;
                 }
 
-                const data = results.data;
-                const processedData = processDataWithTensorFlow(data);
-
-                // Triggering visualizations and processing
-                createD3BarChart(processedData);
-                createChartJSLineChart(processedData);
-                displayDataWithAgGrid(processedData);
-                const filteredData = filterDataWithLodash(processedData);
-                const dateFormattedData = formatDatesWithDataFns(filteredData);
-                const meanValue = calculateMeanWithValue(dateFormattedData);
-                const correlationCoefficient = calculateCorrelationCoefficient(dateFormattedData);
-
-                displayMessage(`Mean of value1: ${meanValue}`);
-                displayMessage(`Correlation Coefficient between value1 and value2: ${correlationCoefficient}`);
+                const processedData = processDataWithTensorFlow(results.data);
+                visualizeAll(processedData);
             },
             header: true,
             skipEmptyLines: true
@@ -69,18 +62,43 @@ document.addEventListener("DOMContentLoaded", function() {
         }));
     }
 
-    function createD3BarChart(data) {
-        displayMessage("Generating D3.js bar chart...");
+    function visualizeAll(data) {
+        createD3BubbleChart(data);
+        createChartJSLineChart(data);
+        displayDataWithAgGrid(data);
+    }
 
-        const svg = d3.select("#d3js-container").append("svg").attr("width", 500).attr("height", 500);
-        svg.selectAll("rect")
-           .data(data)
-           .enter().append("rect")
-           .attr("x", (d, i) => i * 45)
-           .attr("y", d => 500 - d.value1 * 10)
-           .attr("width", 40)
-           .attr("height", d => d.value1 * 10)
-           .attr("fill", "#FF5733");
+    function createD3BubbleChart(data) {
+        displayMessage("Generating D3.js bubble chart...");
+
+        const width = 500;
+        const height = 500;
+
+        const svg = d3.select("#d3js-container").append("svg").attr("width", width).attr("height", height);
+
+        const bubble = d3.pack(data)
+            .size([width, height])
+            .padding(1.5);
+
+        const nodes = d3.hierarchy({children: data})
+            .sum(d => d.value1);
+
+        const bubbles = svg.selectAll(".bubble")
+            .data(bubble(nodes).descendants())
+            .enter()
+            .filter(d => !d.children)
+            .append("g")
+            .attr("class", "bubble")
+            .attr("transform", d => `translate(${d.x},${d.y})`);
+
+        bubbles.append("circle")
+            .attr("r", d => d.r)
+            .style("fill", "#FF5733");
+
+        bubbles.append("text")
+            .attr("dy", ".3em")
+            .style("text-anchor", "middle")
+            .text(d => d.data.date);
     }
 
     function createChartJSLineChart(data) {
@@ -111,32 +129,6 @@ document.addEventListener("DOMContentLoaded", function() {
         
         const gridDiv = document.querySelector("#ag-grid-container");
         new agGrid.Grid(gridDiv, gridOptions);
-    }
-
-    function filterDataWithLodash(data) {
-        displayMessage("Filtering data using Lodash...");
-        return _.filter(data, row => row.value1 > 50);
-    }
-
-    function formatDatesWithDataFns(data) {
-        displayMessage("Formatting dates using Date-fns...");
-        return data.map(row => {
-            row.date = dateFns.format(new Date(row.date), 'MMMM dd, yyyy');
-            return row;
-        });
-    }
-
-    function calculateMeanWithValue(data) {
-        displayMessage("Calculating mean of 'value1' using Math.js...");
-        const values = data.map(row => parseFloat(row.value1));
-        return math.mean(values);
-    }
-
-    function calculateCorrelationCoefficient(data) {
-        displayMessage("Computing correlation coefficient using Simple-statistics...");
-        const xValues = data.map(row => parseFloat(row.value1));
-        const yValues = data.map(row => parseFloat(row.value2));
-        return simpleStats.sampleCorrelation(xValues, yValues);
     }
 });
 
