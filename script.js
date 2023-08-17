@@ -197,21 +197,27 @@ async function trainAndVisualize() {
     try {
         updateStatus("Initializing...");
 
-        // Extract 'Total Revenue' values from the data
-        const totalRevenues = data.map(row => parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000') || 0));
-        
+        // 1. Data Validation
+        const totalRevenues = data.map(row => {
+            const value = parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000'));
+            if (isNaN(value)) {
+                throw new Error("Invalid data detected in 'Total Revenue'.");
+            }
+            return value;
+        });
+
         // Convert data into tensors for training
         const xs = tf.tensor2d(totalRevenues.slice(0, -1), [totalRevenues.length - 1, 1]);
         const ys = tf.tensor2d(totalRevenues.slice(1), [totalRevenues.length - 1, 1]);
+        
+        // 2. Model Training
+        if (xs.anyNaN().dataSync()[0] || ys.anyNaN().dataSync()[0]) {
+            throw new Error("Invalid data detected in tensors.");
+        }
 
-        // Model creation for regression
         const model = tf.sequential();
         model.add(tf.layers.dense({units: 1, inputShape: [1]}));
-        
-        // Compile model
         model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
-
-        // Train model
         updateStatus("Training model...");
         await model.fit(xs, ys, {epochs: 250});
 
@@ -220,7 +226,11 @@ async function trainAndVisualize() {
         const nextValue = nextValueTensor.dataSync()[0];
         const forecastedRevenues = [...totalRevenues, nextValue];
 
-        // Visualization
+        // 3. Visualization
+        if (forecastedRevenues.some(isNaN)) {
+            throw new Error("Invalid data detected in forecasted revenues.");
+        }
+
         const ctxForecast = document.getElementById('forecast').getContext('2d');
         const labels = Array.from({ length: forecastedRevenues.length }, (_, i) => `Event ${i + 1}`);
         new Chart(ctxForecast, {
@@ -252,4 +262,10 @@ async function trainAndVisualize() {
     } catch (error) {
         updateStatus("An error occurred: " + error.message, "error");
     }
+}
+
+function updateStatus(message, type = "info") {
+    const statusDiv = document.getElementById('status');
+    statusDiv.textContent = message;
+    statusDiv.className = type;
 }
