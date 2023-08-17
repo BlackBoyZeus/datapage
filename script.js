@@ -197,7 +197,7 @@ async function trainAndVisualize() {
     try {
         updateStatus("Initializing...");
 
-        // 1. Data Validation
+        // 1. Data Extraction and Validation
         const totalRevenues = data.map(row => {
             const value = parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000'));
             if (isNaN(value)) {
@@ -206,20 +206,32 @@ async function trainAndVisualize() {
             return value;
         });
 
+        if (totalRevenues.length < 2) {
+            throw new Error("Insufficient data for model training.");
+        }
+
         // Convert data into tensors for training
         const xs = tf.tensor2d(totalRevenues.slice(0, -1), [totalRevenues.length - 1, 1]);
         const ys = tf.tensor2d(totalRevenues.slice(1), [totalRevenues.length - 1, 1]);
-        
+
         // 2. Model Training
-        if (xs.anyNaN().dataSync()[0] || ys.anyNaN().dataSync()[0]) {
-            throw new Error("Invalid data detected in tensors.");
-        }
+        updateStatus("Setting up the model...");
 
         const model = tf.sequential();
         model.add(tf.layers.dense({units: 1, inputShape: [1]}));
         model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
+
         updateStatus("Training model...");
-        await model.fit(xs, ys, {epochs: 250});
+        await model.fit(xs, ys, {
+            epochs: 250,
+            callbacks: {
+                onEpochEnd: (epoch, log) => {
+                    if (epoch % 50 === 0) {
+                        updateStatus(`Epoch ${epoch + 1}: loss=${log.loss.toFixed(5)}`);
+                    }
+                }
+            }
+        });
 
         // Predict the next revenue value
         const nextValueTensor = model.predict(tf.tensor2d([totalRevenues[totalRevenues.length - 1]], [1, 1]));
@@ -227,12 +239,9 @@ async function trainAndVisualize() {
         const forecastedRevenues = [...totalRevenues, nextValue];
 
         // 3. Visualization
-        if (forecastedRevenues.some(isNaN)) {
-            throw new Error("Invalid data detected in forecasted revenues.");
-        }
-
         const ctxForecast = document.getElementById('forecast').getContext('2d');
         const labels = Array.from({ length: forecastedRevenues.length }, (_, i) => `Event ${i + 1}`);
+
         new Chart(ctxForecast, {
             type: 'line',
             data: {
