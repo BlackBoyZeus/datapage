@@ -1,8 +1,7 @@
 document.addEventListener("DOMContentLoaded", function() {
     const fileInput = document.getElementById("fileInput");
     const uploadButton = document.getElementById("uploadButton");
-    const messageContainer = document.createElement("div");
-    document.body.appendChild(messageContainer);
+    const messageContainer = document.getElementById("messageContainer");
 
     function displayMessage(message, isError = false) {
         console.log(message);
@@ -31,8 +30,17 @@ document.addEventListener("DOMContentLoaded", function() {
                 const data = results.data;
                 const processedData = processDataWithTensorFlow(data);
 
-                // Further visualizations and processing here...
+                // Triggering visualizations and processing
+                createD3BarChart(processedData);
+                createChartJSLineChart(processedData);
+                displayDataWithAgGrid(processedData);
+                const filteredData = filterDataWithLodash(processedData);
+                const dateFormattedData = formatDatesWithDataFns(filteredData);
+                const meanValue = calculateMeanWithValue(dateFormattedData);
+                const correlationCoefficient = calculateCorrelationCoefficient(dateFormattedData);
 
+                displayMessage(`Mean of value1: ${meanValue}`);
+                displayMessage(`Correlation Coefficient between value1 and value2: ${correlationCoefficient}`);
             },
             header: true,
             skipEmptyLines: true
@@ -42,22 +50,18 @@ document.addEventListener("DOMContentLoaded", function() {
     function processDataWithTensorFlow(data) {
         displayMessage("Processing data with TensorFlow.js...");
 
-        // Assuming data has columns 'value1', 'value2'
         const values1 = data.map(row => parseFloat(row.value1));
         const values2 = data.map(row => parseFloat(row.value2));
 
         const tensor1 = tf.tensor(values1);
         const tensor2 = tf.tensor(values2);
 
-        // Example: Normalize tensors
         const normalizedTensor1 = tensor1.sub(tensor1.min()).div(tensor1.max().sub(tensor1.min()));
         const normalizedTensor2 = tensor2.sub(tensor2.min()).div(tensor2.max().sub(tensor2.min()));
 
-        // Convert tensors back to arrays
         const normalizedValues1 = normalizedTensor1.arraySync();
         const normalizedValues2 = normalizedTensor2.arraySync();
 
-        // Return processed data
         return data.map((row, index) => ({
             ...row,
             normalizedValue1: normalizedValues1[index],
@@ -65,91 +69,74 @@ document.addEventListener("DOMContentLoaded", function() {
         }));
     }
 
+    function createD3BarChart(data) {
+        displayMessage("Generating D3.js bar chart...");
 
-                          // D3.js Visualization: Bar Chart
-function createD3BarChart(data) {
-    displayMessage("Generating D3.js bar chart...");
+        const svg = d3.select("#d3js-container").append("svg").attr("width", 500).attr("height", 500);
+        svg.selectAll("rect")
+           .data(data)
+           .enter().append("rect")
+           .attr("x", (d, i) => i * 45)
+           .attr("y", d => 500 - d.value1 * 10)
+           .attr("width", 40)
+           .attr("height", d => d.value1 * 10)
+           .attr("fill", "#FF5733");
+    }
 
-    const svg = d3.select("#d3js-container").append("svg").attr("width", 500).attr("height", 500);
-    
-    // Assuming 'value1' is the column to visualize
-    svg.selectAll("rect")
-       .data(data)
-       .enter().append("rect")
-       .attr("x", (d, i) => i * 45)
-       .attr("y", d => 500 - d.value1 * 10)
-       .attr("width", 40)
-       .attr("height", d => d.value1 * 10)
-       .attr("fill", "#FF5733");
-}
+    function createChartJSLineChart(data) {
+        displayMessage("Generating Chart.js line chart...");
 
-// Chart.js Visualization: Line Chart
-function createChartJSLineChart(data) {
-    displayMessage("Generating Chart.js line chart...");
+        const ctx = document.getElementById("chartjs-container").getContext("2d");
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(row => row.date),
+                datasets: [{
+                    label: 'Value 1',
+                    data: data.map(row => row.value1),
+                    borderColor: "#FF5733",
+                    fill: false
+                }]
+            }
+        });
+    }
 
-    const ctx = document.getElementById("chartjs-container").getContext("2d");
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            // Assuming 'date' is a column in your data
-            labels: data.map(row => row.date),
-            datasets: [{
-                label: 'Value 1',
-                // Assuming 'value1' is the column to visualize
-                data: data.map(row => row.value1),
-                borderColor: "#FF5733",
-                fill: false
-            }]
-        }
-    });
-}
+    function displayDataWithAgGrid(data) {
+        displayMessage("Displaying data using Ag-Grid...");
 
-// Ag-Grid: Data Presentation in Table Format
-function displayDataWithAgGrid(data) {
-    displayMessage("Displaying data using Ag-Grid...");
+        const gridOptions = {
+            columnDefs: Object.keys(data[0]).map(key => ({headerName: key, field: key})),
+            rowData: data
+        };
+        
+        const gridDiv = document.querySelector("#ag-grid-container");
+        new agGrid.Grid(gridDiv, gridOptions);
+    }
 
-    const gridOptions = {
-        columnDefs: Object.keys(data[0]).map(key => ({headerName: key, field: key})),
-        rowData: data
-    };
-    
-    const gridDiv = document.querySelector("#ag-grid-container");
-    new agGrid.Grid(gridDiv, gridOptions);
-}
+    function filterDataWithLodash(data) {
+        displayMessage("Filtering data using Lodash...");
+        return _.filter(data, row => row.value1 > 50);
+    }
 
-// Lodash: Data Manipulation (e.g., Filter)
-function filterDataWithLodash(data) {
-    displayMessage("Filtering data using Lodash...");
-    
-    // Placeholder: Filter out rows where 'value1' is below a threshold
-    return _.filter(data, row => row.value1 > 50);
-}
+    function formatDatesWithDataFns(data) {
+        displayMessage("Formatting dates using Date-fns...");
+        return data.map(row => {
+            row.date = dateFns.format(new Date(row.date), 'MMMM dd, yyyy');
+            return row;
+        });
+    }
 
-// Date-fns: Formatting Dates
-function formatDatesWithDataFns(data) {
-    displayMessage("Formatting dates using Date-fns...");
+    function calculateMeanWithValue(data) {
+        displayMessage("Calculating mean of 'value1' using Math.js...");
+        const values = data.map(row => parseFloat(row.value1));
+        return math.mean(values);
+    }
 
-    // Placeholder: Format the date from 'YYYY-MM-DD' to 'MMMM dd, yyyy'
-    return data.map(row => {
-        row.date = dateFns.format(new Date(row.date), 'MMMM dd, yyyy');
-        return row;
-    });
-}
+    function calculateCorrelationCoefficient(data) {
+        displayMessage("Computing correlation coefficient using Simple-statistics...");
+        const xValues = data.map(row => parseFloat(row.value1));
+        const yValues = data.map(row => parseFloat(row.value2));
+        return simpleStats.sampleCorrelation(xValues, yValues);
+    }
+});
 
-// Math.js: Calculating Mean of 'value1'
-function calculateMeanWithValue(data) {
-    displayMessage("Calculating mean of 'value1' using Math.js...");
-
-    const values = data.map(row => parseFloat(row.value1));
-    return math.mean(values);
-}
-
-// Simple-statistics: Calculate Correlation Coefficient
-function calculateCorrelationCoefficient(data) {
-    displayMessage("Computing correlation coefficient using Simple-statistics...");
-
-    const xValues = data.map(row => parseFloat(row.value1));
-    const yValues = data.map(row => parseFloat(row.value2));
-
-    return simpleStats.sampleCorrelation(xValues, yValues);
-}
