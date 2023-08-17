@@ -198,25 +198,23 @@ document.getElementById('visualization').onmouseout = function() {
 };
 
 function trainAndVisualize() {
-    // Calculate average growth in revenue
-    const totalRevenues = data.map(row => parseFloat(row['Total Revenue'] || 0));
+    // Extract numeric values and calculate average growth in revenue
+    const eventBreakdowns = data.map(row => parseFloat(row['Event Breakdown'].replace(/,/g, '') || 0));
+    const totalRevenues = data.map(row => parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000') || 0));
+    
     let growths = [];
     for (let i = 1; i < totalRevenues.length; i++) {
-        growths.push((totalRevenues[i] - totalRevenues[i - 1]) / totalRevenues[i - 1]);
+        if (totalRevenues[i - 1] !== 0) {
+            growths.push((totalRevenues[i] - totalRevenues[i - 1]) / totalRevenues[i - 1]);
+        }
     }
     const avgGrowth = growths.reduce((acc, val) => acc + val, 0) / growths.length;
 
     // Forecast future revenue based on historical data and average growth
-    const forecastData = data.map(row => {
-        return {
-            ...row,
-            'Forecast Revenue': parseFloat(row['Total Revenue'] || 0) * (1 + avgGrowth)
-        };
-    });
+    const forecastData = totalRevenues.map(revenue => revenue * (1 + avgGrowth));
 
     const ctxForecast = document.getElementById('forecast').getContext('2d');
-    const labels = forecastData.map(row => row['Sponsors'] || 'Unknown');
-    const values = forecastData.map(row => parseFloat(row['Forecast Revenue'] || 0));
+    const labels = data.map(row => row['Sponsors'] || 'Unknown');
 
     new Chart(ctxForecast, {
         type: 'line',
@@ -231,7 +229,7 @@ function trainAndVisualize() {
             },
             {
                 label: 'Forecasted Revenue ($)',
-                data: values,
+                data: forecastData,
                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
                 borderColor: 'rgba(255, 99, 132, 1)',
                 borderWidth: 1
