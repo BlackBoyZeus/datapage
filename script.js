@@ -1,6 +1,3 @@
-/ Global variable for data storage
-let data;
-
 async function processFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
@@ -172,3 +169,4 @@ document.getElementById('visualization').onmouseout = function() {
         .duration(500)
         .style("opacity", 0);
 };
+
