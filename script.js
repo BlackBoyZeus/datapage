@@ -198,7 +198,7 @@ document.getElementById('visualization').onmouseout = function() {
 };
 
 function trainAndVisualize() {
-    // Extract numeric values from 'Total Revenue' and calculate average growth rate
+    // Extract numeric values from 'Total Revenue'
     const totalRevenues = data.map(row => parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000') || 0));
     
     let growths = [];
@@ -208,27 +208,29 @@ function trainAndVisualize() {
         }
     }
     const avgGrowth = growths.reduce((acc, val) => acc + val, 0) / growths.length;
+    const growthStdDev = Math.sqrt(growths.map(g => Math.pow(g - avgGrowth, 2)).reduce((a, b) => a + b) / growths.length);
 
-    // Forecast future revenue based on historical data and average growth
-    const forecastData = totalRevenues.map(revenue => revenue * (1 + avgGrowth));
+    // Monte Carlo simulation to forecast future revenue
+    const numSimulations = 1000;
+    let forecastedRevenues = [];
+    for (let i = 0; i < numSimulations; i++) {
+        const simulatedGrowth = avgGrowth + growthStdDev * (Math.random() * 2 - 1);  // Assuming normal distribution
+        forecastedRevenues.push(totalRevenues[totalRevenues.length - 1] * (1 + simulatedGrowth));
+    }
 
+    // Visualization
     const ctxForecast = document.getElementById('forecast').getContext('2d');
-    const labels = Array.from({ length: totalRevenues.length }, (_, i) => `Event ${i + 1}`);
+    forecastedRevenues.sort((a, b) => a - b);
+    const fifthPercentile = forecastedRevenues[Math.floor(numSimulations * 0.05)];
+    const ninetyFifthPercentile = forecastedRevenues[Math.floor(numSimulations * 0.95)];
 
     new Chart(ctxForecast, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: ['5th Percentile', 'Average', '95th Percentile'],
             datasets: [{
-                label: 'Historical Revenue ($)',
-                data: totalRevenues,
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            },
-            {
                 label: 'Forecasted Revenue ($)',
-                data: forecastData,
+                data: [fifthPercentile, totalRevenues[totalRevenues.length - 1], ninetyFifthPercentile],
                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
                 borderColor: 'rgba(255, 99, 132, 1)',
                 borderWidth: 1
