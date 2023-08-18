@@ -174,32 +174,41 @@ document.getElementById('visualization').onmouseout = function() {
 };
 
 async function earnings_forecast_simulation_millions() {
+    console.log("Starting the earnings forecast simulation...");
+
     if (!data || data.length === 0) {
         updateStatus("No data available for simulation.", "error");
+        console.error("No data available for simulation.");
         return;
     }
 
     // Extract the 'Total Revenue' column and convert it into a tensor
+    console.log("Extracting revenue data...");
     const revenues = data.map(row => parseFloat(row['Total Revenue'] || 0));
     const dataTensor = tf.tensor(revenues);
 
     // Define the Generator
+    console.log("Defining the generator...");
     const generator = tf.sequential();
     generator.add(tf.layers.dense({ units: 128, activation: 'relu', inputShape: [100] }));
     generator.add(tf.layers.dense({ units: 1, activation: 'linear' }));
 
     // Define the Discriminator
+    console.log("Defining the discriminator...");
     const discriminator = tf.sequential();
     discriminator.add(tf.layers.dense({ units: 128, activation: 'relu', inputShape: [1] }));
     discriminator.add(tf.layers.dense({ units: 1, activation: 'sigmoid' }));
 
     // Define loss functions and optimizers
+    console.log("Setting up loss functions and optimizers...");
     const generatorOptimizer = tf.train.adam(0.0001);
     const discriminatorOptimizer = tf.train.adam(0.0001);
 
     // Training loop (simplified for demonstration)
+    console.log("Starting GAN training...");
     for (let i = 0; i < 1000; i++) {
-        // This is a very basic training loop and might not be optimal
+        console.log(`Training iteration ${i + 1}...`);
+        
         // Train discriminator
         const realData = dataTensor;
         const fakeData = generator.predict(tf.randomNormal([dataTensor.shape[0], 100]));
@@ -208,6 +217,7 @@ async function earnings_forecast_simulation_millions() {
         discriminatorOptimizer.minimize(() => {
             const predictions = discriminator.predict(combinedData);
             const loss = tf.losses.sigmoidCrossEntropy(labels, predictions);
+            console.log(`Discriminator loss at iteration ${i + 1}: ${loss.dataSync()[0]}`);
             return loss;
         });
 
@@ -217,11 +227,15 @@ async function earnings_forecast_simulation_millions() {
             const generated = generator.predict(noise);
             const discPrediction = discriminator.predict(generated);
             const loss = tf.losses.sigmoidCrossEntropy(tf.onesLike(discPrediction), discPrediction);
+            console.log(`Generator loss at iteration ${i + 1}: ${loss.dataSync()[0]}`);
             return loss;
         });
     }
 
+    console.log("GAN training complete!");
+
     // Once trained, run Monte Carlo Simulation
+    console.log("Starting Monte Carlo simulation...");
     let simulated_revenues = [];
     for (let i = 0; i < 10000; i++) {
         // Generate synthetic data using the GAN's generator
@@ -235,11 +249,15 @@ async function earnings_forecast_simulation_millions() {
         simulated_revenues.push(simulated_value / 1e6);
     }
 
+    console.log("Monte Carlo simulation complete!");
+
     // Visualize the results
-    displayGANResults(simulated_revenues);  // A new function to visualize the GAN results
+    displayGANResults(simulated_revenues);  // Assuming you've defined this function as earlier
 
     updateStatus("Simulation complete!", "success");
+    console.log("Earnings forecast simulation complete!");
 }
+
 
 function displayGANResults(revenues) {
     // Use a JavaScript charting library (e.g., Chart.js) to visualize the results
