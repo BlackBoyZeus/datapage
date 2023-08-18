@@ -1,10 +1,12 @@
 async function processFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
+
     if (!file) {
         updateStatus("No file selected.", "error");
         return;
     }
+
     try {
         updateStatus("Reading file...");
         const fileContent = await readFile(file);
@@ -15,8 +17,10 @@ async function processFile() {
             updateStatus("Error processing the CSV file.", "error");
             return;
         }
+
         updateStatus("Visualizing data...");
         displayBarChart();
+
         updateStatus("Visualization complete!", "success");
     } catch (error) {
         updateStatus("An error occurred: " + error.message, "error");
@@ -30,15 +34,18 @@ function readFile(file) {
         reader.readAsText(file);
     });
 }
+
 function updateStatus(message, type = "info") {
     const statusDiv = document.getElementById('status');
     statusDiv.textContent = message;
     statusDiv.className = type;
 }
+
 function csvToJSON(csv) {
     const lines = csv.trim().split('\n');
     const result = [];
     const headers = lines[0].split(',');
+
     for (let i = 1; i < lines.length; i++) {
         const obj = {};
         const currentLine = lines[i].split(',');
@@ -49,10 +56,12 @@ function csvToJSON(csv) {
     }
     return result;
 }
+
 function displayBarChart() {
     const ctx = document.getElementById('visualization').getContext('2d');
     const labels = data.map(row => row['Sponsors'] || 'Unknown');
     const values = data.map(row => parseFloat(row['Event Breakdown'] || 0));
+
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -89,10 +98,12 @@ function displayBarChart() {
         }
     });
 }
+
 function displayPieChart() {
     const ctxMetrics = document.getElementById('metrics').getContext('2d');
     const venues = [...new Set(data.map(row => row['Venue']))];
     const venueCounts = venues.map(venue => data.filter(row => row['Venue'] === venue).length);
+
     new Chart(ctxMetrics, {
         type: 'pie',
         data: {
@@ -118,39 +129,14 @@ function displayPieChart() {
         }
     });
 }
-function displayAggregateMetrics() {
-    // Validate and parse data
-    let validData = true;
-    let totalRevenueSum = 0;
-    let eventBreakdownSum = 0;
-    data.forEach(row => {
-        const revenue = parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000'));
-        const breakdown = parseFloat(row['Event Breakdown'].replace(/,/g, '').replace(/M\+/g, '000000'));
-        
-        if (isNaN(revenue) || isNaN(breakdown)) {
-            validData = false;
-        } else {
-            totalRevenueSum += revenue;
-            eventBreakdownSum += breakdown;
-        }
-    });
-    const totalRevenue = totalRevenueSum;
-    const averageEventBreakdown = eventBreakdownSum / data.length;
-    if (validData) {
-        document.getElementById('aggregateMetrics').innerHTML = `
-            <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
-            <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
-        `;
-    } else {
-        document.getElementById('aggregateMetrics').innerHTML = `
-            <strong>Error:</strong> Invalid data detected.
-        `;
-    }
-}
+
+
+
 // D3.js Tooltip for extra information on hover
 const tooltip = d3.select("body").append("div")
     .attr("class", "tooltip")
     .style("opacity", 0);
+
 document.getElementById('visualization').onmousemove = function(event) {
     const index = Math.floor(event.offsetX / 100);
     if (data[index]) {
@@ -166,11 +152,15 @@ document.getElementById('visualization').onmousemove = function(event) {
         .style("top", (event.pageY - 28) + "px");
     }
 };
+
 document.getElementById('visualization').onmouseout = function() {
     tooltip.transition()
         .duration(500)
         .style("opacity", 0);
 };
+
+
+
 
 
 async function trainAndVisualize() {
