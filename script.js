@@ -1,6 +1,3 @@
-// Global variable for data storage
-let data;
-
 async function processFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
@@ -14,10 +11,26 @@ async function processFile() {
         updateStatus("Reading file...");
         const fileContent = await readFile(file);
         
-        updateStatus("Processing CSV...");
-        data = csvToJSON(fileContent);
+        if (!fileContent || fileContent.trim().length === 0) {
+            updateStatus("File is empty or unreadable.", "error");
+            return;
+        }
+
+        updateStatus("Determining file type...");
+        let data;
+        if (file.name.endsWith('.csv')) {
+            updateStatus("Processing CSV...");
+            data = csvToJSON(fileContent);
+        } else if (file.name.endsWith('.json')) {
+            updateStatus("Processing JSON...");
+            data = JSON.parse(fileContent);
+        } else {
+            updateStatus("Unsupported file type.", "error");
+            return;
+        }
+
         if (!data || data.length === 0) {
-            updateStatus("Error processing the CSV file.", "error");
+            updateStatus("Error processing the file.", "error");
             return;
         }
 
@@ -50,11 +63,12 @@ function updateStatus(message, type = "info") {
 function csvToJSON(csv) {
     const lines = csv.trim().split('\n');
     const result = [];
-    const headers = lines[0].split(',');
+    const delimiter = detectDelimiter(lines[0]); // Improved handling for different delimiters
+    const headers = lines[0].split(delimiter).map(field => field.trim().replace(/^"|"$/g, ''));
 
     for (let i = 1; i < lines.length; i++) {
         const obj = {};
-        const currentLine = lines[i].split(',');
+        const currentLine = lines[i].split(delimiter).map(field => field.trim().replace(/^"|"$/g, ''));
         for (let j = 0; j < headers.length; j++) {
             obj[headers[j]] = currentLine[j];
         }
@@ -62,6 +76,17 @@ function csvToJSON(csv) {
     }
     return result;
 }
+
+function detectDelimiter(line) {
+    const delimiters = [',', ';', '\t'];
+    for (let delimiter of delimiters) {
+        if (line.includes(delimiter)) {
+            return delimiter;
+        }
+    }
+    return ','; // default to comma if no known delimiter is found
+}
+
 
 function displayBarChart() {
     const ctx = document.getElementById('visualization').getContext('2d');
