@@ -208,32 +208,18 @@ async function earnings_forecast_simulation_millions() {
         const discriminatorOptimizer = tf.train.adam(0.0001);
 
         // Training loop
-        console.log("Starting GAN training...");
-        for (let i = 0; i < 300; i++) {
-            console.log(`Training iteration ${i + 1}...`);
+console.log("Starting GAN training...");
+for (let i = 0; i < 300; i++) {
+    console.log(`Training iteration ${i + 1}...`);
 
-            const fakeData = generator.predict(tf.randomNormal([dataTensor.shape[0], 100]));
-            const combinedData = dataTensor.concat(fakeData, 0);
-            const labels = tf.tensor([...Array(dataTensor.shape[0]).fill([1]), ...Array(dataTensor.shape[0]).fill([0])]);
+    const fakeData = generator.predict(tf.randomNormal([dataTensor.shape[0], 100])).reshape([dataTensor.shape[0]]);
+    
+    console.log("Real data shape:", dataTensor.shape);
+    console.log("Fake data shape:", fakeData.shape);
 
-            console.log("Combined data tensor shape:", combinedData.shape);
+    const combinedData = dataTensor.concat(fakeData, 0);
+    const labels = tf.tensor([...Array(dataTensor.shape[0]).fill([1]), ...Array(dataTensor.shape[0]).fill([0])]);
 
-            discriminatorOptimizer.minimize(() => {
-                const predictions = discriminator.predict(combinedData);
-                return tf.losses.sigmoidCrossEntropy(labels, predictions);
-            });
-
-            generatorOptimizer.minimize(() => {
-                const noise = tf.randomNormal([dataTensor.shape[0], 100]);
-                const generated = generator.predict(noise);
-                const discPrediction = discriminator.predict(generated);
-                return tf.losses.sigmoidCrossEntropy(tf.onesLike(discPrediction), discPrediction);
-            });
-
-            await tf.nextFrame();
-        }
-
-        console.log("GAN training complete!");
 
         // Monte Carlo Simulation
         console.log("Starting Monte Carlo simulation...");
