@@ -194,14 +194,20 @@ document.getElementById('visualization').onmouseout = function() {
 
 
 function trainAndVisualize() {
-    // Calculate average growth in revenue
+    // Extract and clean the 'Total Revenue' data
     const totalRevenues = data.map(row => {
-        const revenue = row['Total Revenue'];
-        if (revenue.includes('M+')) return parseFloat(revenue.replace('M+', '')) * 1000000;
-        if (revenue.includes('K')) return parseFloat(revenue.replace('K', '')) * 1000;
-        return parseFloat(revenue) || 0;
+        let revenue = row['Total Revenue'];
+        if (!revenue) return 0;
+        if (revenue.includes('M+')) return parseFloat(revenue.replace('M+', '').replace('$', '')) * 1000000;
+        return parseFloat(revenue.replace('$', '').replace(',', '')) || 0;
     });
 
+    if (totalRevenues.length < 2) {
+        updateStatus("Not enough data for forecasting.", "error");
+        return;
+    }
+
+    // Calculate average growth in revenue
     let growths = [];
     for (let i = 1; i < totalRevenues.length; i++) {
         if (totalRevenues[i - 1] !== 0) {
@@ -213,6 +219,7 @@ function trainAndVisualize() {
     // Forecast future revenue
     const forecastData = totalRevenues.map(revenue => revenue * (1 + avgGrowth));
 
+    // Visualization
     const ctxForecast = document.getElementById('forecast').getContext('2d');
     const labels = data.map(row => row['Sponsors'] || 'Unknown');
 
@@ -247,6 +254,7 @@ function trainAndVisualize() {
         }
     });
 }
+
 
 
 function updateStatus(message, type = "info") {
