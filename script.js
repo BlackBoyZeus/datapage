@@ -79,11 +79,53 @@ function manipulateDataWithTFJS(data) {
     sumTensor.array().then(array => console.log(array));
 }
 
-// Cluster and visualize data
+// Function to visualize the data using Chart.js
+function visualizeData(data) {
+    const ctx = document.getElementById('visualization').getContext('2d');
+    
+    // Extracting data for visualization
+    const labels = data.map((item, index) => 'Item ' + (index + 1));
+    const eventBreakdownData = data.map(item => item['Event Breakdown']);
+    const totalRevenueData = data.map(item => item['Total Revenue']);
+
+    const chartData = {
+        labels: labels,
+        datasets: [{
+            label: 'Event Breakdown',
+            data: eventBreakdownData,
+            borderColor: 'blue',
+            borderWidth: 1,
+            fill: false
+        }, {
+            label: 'Total Revenue',
+            data: totalRevenueData,
+            borderColor: 'red',
+            borderWidth: 1,
+            fill: false
+        }]
+    };
+
+    new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    beginAtZero: true
+                },
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Modified onClusterDataClick function to include visualization
 async function onClusterDataClick() {
     const data = parseCSV(document.getElementById('fileInput').value);
     const preprocessedData = preprocessData(data);
-    // ... [Any clustering or visualization functions can be added here]
     manipulateDataWithTFJS(preprocessedData);
+    visualizeData(preprocessedData);
 }
-
