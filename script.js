@@ -93,19 +93,30 @@ function displayBarChart() {
     const labels = data.map(row => row['Sponsors'] || 'Unknown');
     const values = data.map(row => parseFloat(row['Event Breakdown'] || 0));
 
+    // Sort by values for better visualization
+    const sortedIndices = values.map((value, index) => index).sort((a, b) => values[b] - values[a]);
+    const sortedLabels = sortedIndices.map(index => labels[index]);
+    const sortedValues = sortedIndices.map(index => values[index]);
+
+    const colors = generateColors(sortedLabels.length);
+
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: sortedLabels,
             datasets: [{
                 label: 'Event Breakdown ($)',
-                data: values,
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
+                data: sortedValues,
+                backgroundColor: colors.background,
+                borderColor: colors.border,
                 borderWidth: 1
             }]
         },
         options: {
+            title: {
+                display: true,
+                text: 'Event Breakdown by Sponsors'
+            },
             responsive: true,
             scales: {
                 yAxes: [{
@@ -124,6 +135,15 @@ function displayBarChart() {
                         enabled: true,
                         mode: 'xy'
                     }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed.y;
+                            return `${label}: $${value.toFixed(2)}`;
+                        }
+                    }
                 }
             }
         }
@@ -131,9 +151,13 @@ function displayBarChart() {
 }
 
 function displayPieChart() {
+    if (!data || data.length === 0) return;
+
     const ctxMetrics = document.getElementById('metrics').getContext('2d');
     const venues = [...new Set(data.map(row => row['Venue']))];
     const venueCounts = venues.map(venue => data.filter(row => row['Venue'] === venue).length);
+
+    const colors = generateColors(venues.length);
 
     new Chart(ctxMetrics, {
         type: 'pie',
@@ -141,24 +165,44 @@ function displayPieChart() {
             labels: venues,
             datasets: [{
                 data: venueCounts,
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.2)',
-                    'rgba(255, 206, 86, 0.2)',
-                    'rgba(75, 192, 192, 0.2)',
-                    'rgba(153, 102, 255, 0.2)',
-                    'rgba(54, 162, 235, 0.2)'
-                ],
-                borderColor: [
-                    'rgba(255, 99, 132, 1)',
-                    'rgba(255, 206, 86, 1)',
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(153, 102, 255, 1)',
-                    'rgba(54, 162, 235, 1)'
-                ],
+                backgroundColor: colors.background,
+                borderColor: colors.border,
                 borderWidth: 1
             }]
+        },
+        options: {
+            title: {
+                display: true,
+                text: 'Event Distribution by Venue'
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const venue = context.label;
+                            const count = context.parsed;
+                            return `${venue}: ${count} event(s)`;
+                        }
+                    }
+                }
+            }
         }
     });
+}
+
+function generateColors(count) {
+    const colors = {
+        background: [],
+        border: []
+    };
+
+    for (let i = 0; i < count; i++) {
+        const hue = (i * 360 / count) % 360;
+        colors.background.push(`hsla(${hue}, 60%, 75%, 0.2)`);
+        colors.border.push(`hsla(${hue}, 60%, 50%, 1)`);
+    }
+
+    return colors;
 }
 
 function displayAggregateMetrics() {
