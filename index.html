@@ -10,23 +10,26 @@
     <h1>Data Visualization</h1>
 
     <input type="file" id="fileInput" onchange="processFile()">
-    <button id="clusterData" onclick="onClusterDataClick()">Cluster Data</button>
+    <button id="clusterData" onclick="trainAndVisualize()">Cluster Data</button>
+ <button id="clusterData" onclick="onClusterDataClick()">Cluster Data</button>
+
+
 
     <div id="status"></div>
-    
     <canvas id="visualization"></canvas>
     <canvas id="metrics"></canvas>
     <div id="aggregateMetrics"></div>
-    
-    <!-- Visualization Containers -->
-    <div id="visualization"></div>
-    <canvas id="forecast"></canvas>
-
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
-
+    <!-- Visualization Containers -->
+    <div id="visualization"></div>
+<canvas id="forecast"></canvas>
+   <!-- Your custom script -->
+   <script src="script.js"></script>
+</body>
+</html>
 
