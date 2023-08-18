@@ -20,8 +20,7 @@ async function processFile() {
 
         updateStatus("Visualizing data...");
         displayBarChart();
-        displayPieChart();
-        displayAggregateMetrics();
+        trainAndVisualize();
 
         updateStatus("Visualization complete!", "success");
     } catch (error) {
@@ -193,26 +192,44 @@ document.getElementById('visualization').onmouseout = function() {
         .style("opacity", 0);
 };
 
+
 function trainAndVisualize() {
-    // For demonstration, we're going to generate random data.
-    const forecastData = data.map(row => {
-        return {
-            ...row,
-            'Forecast Revenue': parseFloat(row['Total Revenue'] || 0) * (1 + (Math.random() - 0.5) * 0.2)
-        };
+    // Calculate average growth in revenue
+    const totalRevenues = data.map(row => {
+        const revenue = row['Total Revenue'];
+        if (revenue.includes('M+')) return parseFloat(revenue.replace('M+', '')) * 1000000;
+        if (revenue.includes('K')) return parseFloat(revenue.replace('K', '')) * 1000;
+        return parseFloat(revenue) || 0;
     });
 
+    let growths = [];
+    for (let i = 1; i < totalRevenues.length; i++) {
+        if (totalRevenues[i - 1] !== 0) {
+            growths.push((totalRevenues[i] - totalRevenues[i - 1]) / totalRevenues[i - 1]);
+        }
+    }
+    const avgGrowth = growths.reduce((acc, val) => acc + val, 0) / growths.length;
+
+    // Forecast future revenue
+    const forecastData = totalRevenues.map(revenue => revenue * (1 + avgGrowth));
+
     const ctxForecast = document.getElementById('forecast').getContext('2d');
-    const labels = forecastData.map(row => row['Sponsors'] || 'Unknown');
-    const values = forecastData.map(row => parseFloat(row['Forecast Revenue'] || 0));
+    const labels = data.map(row => row['Sponsors'] || 'Unknown');
 
     new Chart(ctxForecast, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [{
+                label: 'Historical Revenue ($)',
+                data: totalRevenues,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            },
+            {
                 label: 'Forecasted Revenue ($)',
-                data: values,
+                data: forecastData,
                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
                 borderColor: 'rgba(255, 99, 132, 1)',
                 borderWidth: 1
