@@ -194,7 +194,7 @@ document.getElementById('visualization').onmouseout = function() {
 
 
 function trainAndVisualize() {
-    // Extract and clean the 'Total Revenue' data
+    // 1. Data extraction and cleaning
     const totalRevenues = data.map(row => {
         let revenue = row['Total Revenue'];
         if (!revenue) return 0;
@@ -202,43 +202,22 @@ function trainAndVisualize() {
         return parseFloat(revenue.replace('$', '').replace(',', '')) || 0;
     });
 
-    if (totalRevenues.length < 2) {
-        updateStatus("Not enough data for forecasting.", "error");
-        return;
-    }
+    const sponsors = data.map(row => row['Sponsors'] || 'Unknown');
+    const venues = [...new Set(data.map(row => row['Venue']))];
+    const venueCounts = venues.map(venue => data.filter(row => row['Venue'] === venue).length);
 
-    // Calculate average growth in revenue
-    let growths = [];
-    for (let i = 1; i < totalRevenues.length; i++) {
-        if (totalRevenues[i - 1] !== 0) {
-            growths.push((totalRevenues[i] - totalRevenues[i - 1]) / totalRevenues[i - 1]);
-        }
-    }
-    const avgGrowth = growths.reduce((acc, val) => acc + val, 0) / growths.length;
+    // 2. Bar chart: Total Revenue vs Sponsors
+    const ctxBar = document.getElementById('barChart').getContext('2d');
 
-    // Forecast future revenue
-    const forecastData = totalRevenues.map(revenue => revenue * (1 + avgGrowth));
-
-    // Visualization
-    const ctxForecast = document.getElementById('forecast').getContext('2d');
-    const labels = data.map(row => row['Sponsors'] || 'Unknown');
-
-    new Chart(ctxForecast, {
-        type: 'line',
+    new Chart(ctxBar, {
+        type: 'bar',
         data: {
-            labels: labels,
+            labels: sponsors,
             datasets: [{
-                label: 'Historical Revenue ($)',
+                label: 'Total Revenue ($)',
                 data: totalRevenues,
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            },
-            {
-                label: 'Forecasted Revenue ($)',
-                data: forecastData,
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
                 borderWidth: 1
             }]
         },
@@ -253,7 +232,36 @@ function trainAndVisualize() {
             }
         }
     });
+
+    // 3. Pie chart: Events per Venue
+    const ctxPie = document.getElementById('pieChart').getContext('2d');
+
+    new Chart(ctxPie, {
+        type: 'pie',
+        data: {
+            labels: venues,
+            datasets: [{
+                data: venueCounts,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(54, 162, 235, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(54, 162, 235, 1)'
+                ],
+                borderWidth: 1
+            }]
+        }
+    });
 }
+
 
 
 
