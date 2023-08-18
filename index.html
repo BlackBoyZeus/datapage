@@ -12,31 +12,23 @@
     <input type="file" id="fileInput" onchange="processFile()">
     <button id="clusterData" onclick="earnings_forecast_simulation_millions()">Run Earnings Forecast Simulation</button>
 
-
-
-
-
     <div id="status"></div>
     <canvas id="visualization"></canvas>
     <canvas id="metrics"></canvas>
     <div id="aggregateMetrics"></div>
 
-
-
     <div id="ganVisualizationContainer">
-    <h2>GAN Simulation Results</h2>
-    <canvas id="ganResults"></canvas>
-</div>
+        <h2>GAN Simulation Results</h2>
+        <canvas id="ganResults"></canvas>
+    </div>
+
+    <!-- Importing required libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <!-- Your custom script -->
     <script src="script.js"></script>
-
-    
-
-    
-   <!-- Your custom script -->
-   <script src="script.js"></script>
 </body>
 </html>
 
