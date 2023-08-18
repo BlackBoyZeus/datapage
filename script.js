@@ -257,6 +257,7 @@ function trainAndVisualize() {
 
 
 
+
 function updateStatus(message, type = "info") {
     const statusDiv = document.getElementById('status');
     statusDiv.textContent = message;
