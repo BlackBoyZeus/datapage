@@ -193,89 +193,57 @@ document.getElementById('visualization').onmouseout = function() {
         .style("opacity", 0);
 };
 
-async function trainAndVisualize() {
-    try {
-        updateStatus("Initializing...");
-
-        // 1. Data Extraction
-        const totalRevenuesRaw = data.map(row => row['Total Revenue']);
-
-        // 2. Data Cleaning
-        const totalRevenues = totalRevenuesRaw.map(revenue => {
-            if (typeof revenue === 'string') {
-                if (revenue.includes('M+')) return parseFloat(revenue.replace('M+', '')) * 1000000;
-                if (revenue.includes('M')) return parseFloat(revenue.replace('M', '')) * 1000000;
-                if (revenue.includes('K')) return parseFloat(revenue.replace('K', '')) * 1000;
-                if (revenue.includes('to')) {
-                    const [start, end] = revenue.split(' to ').map(val => parseFloat(val));
-                    return (start + end) / 2;  // Average of the range
-                }
-            }
-            return parseFloat(revenue) || 0;
-        });
-
-        // 3. Data Validation
-        if (totalRevenues.some(val => isNaN(val) || !isFinite(val))) {
-            throw new Error("Invalid data detected. Ensure cleaned 'Total Revenue' values are numeric.");
-        }
-
-        // 4. Model Training
-        const xs = tf.tensor2d(totalRevenues.slice(0, -1), [totalRevenues.length - 1, 1]);
-        const ys = tf.tensor2d(totalRevenues.slice(1), [totalRevenues.length - 1, 1]);
-
-        const model = tf.sequential();
-        model.add(tf.layers.dense({units: 1, inputShape: [1]}));
-        model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
-
-        updateStatus("Training model...");
-        await model.fit(xs, ys, {
-            epochs: 250,
-            callbacks: {
-                onEpochEnd: (epoch, log) => {
-                    if (epoch % 50 === 0) {
-                        updateStatus(`Epoch ${epoch + 1}: loss=${log.loss.toFixed(5)}`);
-                    }
-                }
-            }
-        });
-
-        // 5. Visualization
-        const nextValueTensor = model.predict(tf.tensor2d([totalRevenues[totalRevenues.length - 1]], [1, 1]));
-        const nextValue = nextValueTensor.dataSync()[0];
-        const forecastedRevenues = [...totalRevenues, nextValue];
-
-        const ctxForecast = document.getElementById('forecast').getContext('2d');
-        const labels = Array.from({ length: forecastedRevenues.length }, (_, i) => `Event ${i + 1}`);
-
-        new Chart(ctxForecast, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Historical + Forecasted Revenue ($)',
-                    data: forecastedRevenues,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true
-                        }
-                    }]
-                }
-            }
-        });
-
-        updateStatus("Visualization complete!", "success");
-
-    } catch (error) {
-        updateStatus("An error occurred: " + error.message, "error");
+function trainAndVisualize() {
+    // Calculate average growth in revenue
+    const totalRevenues = data.map(row => parseFloat(row['Total Revenue'] || 0));
+    let growths = [];
+    for (let i = 1; i < totalRevenues.length; i++) {
+        growths.push((totalRevenues[i] - totalRevenues[i - 1]) / totalRevenues[i - 1]);
     }
+    const avgGrowth = growths.reduce((acc, val) => acc + val, 0) / growths.length;
+
+    // Forecast future revenue based on historical data and average growth
+    const forecastData = data.map(row => {
+        return {
+            ...row,
+            'Forecast Revenue': parseFloat(row['Total Revenue'] || 0) * (1 + avgGrowth)
+        };
+    });
+
+    const ctxForecast = document.getElementById('forecast').getContext('2d');
+    const labels = forecastData.map(row => row['Sponsors'] || 'Unknown');
+    const values = forecastData.map(row => parseFloat(row['Forecast Revenue'] || 0));
+
+    new Chart(ctxForecast, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Historical Revenue ($)',
+                data: totalRevenues,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            },
+            {
+                label: 'Forecasted Revenue ($)',
+                data: values,
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
 }
 
 function updateStatus(message, type = "info") {
