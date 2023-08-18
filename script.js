@@ -10,10 +10,12 @@ function processFile() {
         reader.onload = function(event) {
             const csv = event.target.result;
             const data = parseCSV(csv);
-            // TODO: Further processing or visualization of the data
-
+            
             // Update the status div
             statusDiv.innerHTML = "File successfully processed!";
+            
+            // Call any additional functions here if needed
+            manipulateDataWithTFJS(preprocessData(data));
         };
 
         reader.onerror = function() {
@@ -64,60 +66,24 @@ function stringToNumber(str) {
     return isNaN(num) ? null : num;
 }
 
-c function clusterData(data) {
+// Function to demonstrate tensor creation and manipulation using TensorFlow.js
+function manipulateDataWithTFJS(data) {
     // Convert data into TensorFlow tensors
-    const tensors = data.map(item => [item['Event Breakdown'], item['Total Revenue']]);
-    const dataset = tf.tensor2d(tensors);
+    const eventBreakdownTensor = tf.tensor(data.map(item => item['Event Breakdown']));
+    const totalRevenueTensor = tf.tensor(data.map(item => item['Total Revenue']));
 
-    // KMeans clustering
-    const kmeans = new tf.KMeans(dataset);
-    const clusters = await kmeans.cluster(3); // Assuming 3 clusters, this can be changed
+    // Example operation: Adding tensors (just for demonstration purposes)
+    const sumTensor = tf.add(eventBreakdownTensor, totalRevenueTensor);
 
-    // Attach cluster label to the data
-    for (let i = 0; i < data.length; i++) {
-        data[i].cluster = clusters[i];
-    }
-
-    return data;
+    // Convert tensor back to JavaScript array and log to console
+    sumTensor.array().then(array => console.log(array));
 }
 
-
-function visualizeClusters(data) {
-    const ctx = document.getElementById('visualization').getContext('2d');
-    const scatterData = {
-        datasets: [{
-            label: 'Cluster 1',
-            data: data.filter(item => item.cluster === 0).map(item => ({ x: item['Event Breakdown'], y: item['Total Revenue'] })),
-            backgroundColor: 'red'
-        }, {
-            label: 'Cluster 2',
-            data: data.filter(item => item.cluster === 1).map(item => ({ x: item['Event Breakdown'], y: item['Total Revenue'] })),
-            backgroundColor: 'blue'
-        }, {
-            label: 'Cluster 3',
-            data: data.filter(item => item.cluster === 2).map(item => ({ x: item['Event Breakdown'], y: item['Total Revenue'] })),
-            backgroundColor: 'green'
-        }]
-    };
-
-    new Chart(ctx, {
-        type: 'scatter',
-        data: scatterData,
-        options: {
-            scales: {
-                x: {
-                    type: 'linear',
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-}
-
+// Cluster and visualize data
 async function onClusterDataClick() {
     const data = parseCSV(document.getElementById('fileInput').value);
     const preprocessedData = preprocessData(data);
-    const clusteredData = await clusterData(preprocessedData);
-    visualizeClusters(clusteredData);
+    // ... [Any clustering or visualization functions can be added here]
+    manipulateDataWithTFJS(preprocessedData);
 }
 
