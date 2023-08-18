@@ -20,14 +20,12 @@ async function processFile() {
 
         updateStatus("Visualizing data...");
         displayBarChart();
-        trainAndVisualize();
 
         updateStatus("Visualization complete!", "success");
     } catch (error) {
         updateStatus("An error occurred: " + error.message, "error");
     }
 }
-
 function readFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -270,3 +268,8 @@ function updateStatus(message, type = "info") {
     statusDiv.className = type;
 }
 
+// New function to handle the button click
+async function onClusterDataClick() {
+    await processFile();
+    trainAndVisualize();
+}
