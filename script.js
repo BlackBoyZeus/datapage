@@ -46,4 +46,21 @@ function parseCSV(csv) {
     return result;
 }
 
-// TODO: Functions for clustering, visualization, and metrics
+// Helper function to preprocess the data
+function preprocessData(data) {
+    return data.map(item => {
+        return {
+            ...item,
+            'Event Breakdown': stringToNumber(item['Event Breakdown']),
+            'Total Revenue': stringToNumber(item['Total Revenue'])
+        };
+    });
+}
+
+// Helper function to convert a string containing numbers and other characters into a number
+function stringToNumber(str) {
+    if (!str) return null;
+    const num = parseFloat(str.replace(/[^0-9.-]+/g, ""));
+    return isNaN(num) ? null : num;
+}
+
