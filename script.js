@@ -172,3 +172,101 @@ document.getElementById('visualization').onmouseout = function() {
         .duration(500)
         .style("opacity", 0);
 };
+
+async function earnings_forecast_simulation_millions() {
+    if (!data || data.length === 0) {
+        updateStatus("No data available for simulation.", "error");
+        return;
+    }
+
+    // Extract the 'Total Revenue' column and convert it into a tensor
+    const revenues = data.map(row => parseFloat(row['Total Revenue'] || 0));
+    const dataTensor = tf.tensor(revenues);
+
+    // Define the Generator
+    const generator = tf.sequential();
+    generator.add(tf.layers.dense({ units: 128, activation: 'relu', inputShape: [100] }));
+    generator.add(tf.layers.dense({ units: 1, activation: 'linear' }));
+
+    // Define the Discriminator
+    const discriminator = tf.sequential();
+    discriminator.add(tf.layers.dense({ units: 128, activation: 'relu', inputShape: [1] }));
+    discriminator.add(tf.layers.dense({ units: 1, activation: 'sigmoid' }));
+
+    // Define loss functions and optimizers
+    const generatorOptimizer = tf.train.adam(0.0001);
+    const discriminatorOptimizer = tf.train.adam(0.0001);
+
+    // Training loop (simplified for demonstration)
+    for (let i = 0; i < 1000; i++) {
+        // This is a very basic training loop and might not be optimal
+        // Train discriminator
+        const realData = dataTensor;
+        const fakeData = generator.predict(tf.randomNormal([dataTensor.shape[0], 100]));
+        const combinedData = realData.concat(fakeData, 0);
+        const labels = tf.tensor([...Array(dataTensor.shape[0]).fill([1]), ...Array(dataTensor.shape[0]).fill([0])]);
+        discriminatorOptimizer.minimize(() => {
+            const predictions = discriminator.predict(combinedData);
+            const loss = tf.losses.sigmoidCrossEntropy(labels, predictions);
+            return loss;
+        });
+
+        // Train generator
+        const noise = tf.randomNormal([dataTensor.shape[0], 100]);
+        generatorOptimizer.minimize(() => {
+            const generated = generator.predict(noise);
+            const discPrediction = discriminator.predict(generated);
+            const loss = tf.losses.sigmoidCrossEntropy(tf.onesLike(discPrediction), discPrediction);
+            return loss;
+        });
+    }
+
+    // Once trained, run Monte Carlo Simulation
+    let simulated_revenues = [];
+    for (let i = 0; i < 10000; i++) {
+        // Generate synthetic data using the GAN's generator
+        const noise = tf.randomNormal([1, 100]);
+        let synthetic_revenue = generator.predict(noise).dataSync()[0];
+        
+        // Apply random variation
+        let variation = (Math.random() * 0.20) - 0.10;  // Random number between -0.10 and 0.10
+        let simulated_value = synthetic_revenue * (1 + variation);
+        
+        simulated_revenues.push(simulated_value / 1e6);
+    }
+
+    // Visualize the results
+    displayGANResults(simulated_revenues);  // A new function to visualize the GAN results
+
+    updateStatus("Simulation complete!", "success");
+}
+
+function displayGANResults(revenues) {
+    // Use a JavaScript charting library (e.g., Chart.js) to visualize the results
+    // This is a placeholder and assumes you've set up a canvas with id 'ganResults'
+    const ctx = document.getElementById('ganResults').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Array.from({length: revenues.length}, (_, i) => i + 1),
+            datasets: [{
+                label: 'Simulated Revenue (in millions $)',
+                data: revenues,
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
+}
+
