@@ -130,38 +130,7 @@ function displayPieChart() {
     });
 }
 
-function displayAggregateMetrics() {
-    // Validate and parse data
-    let validData = true;
-    let totalRevenueSum = 0;
-    let eventBreakdownSum = 0;
 
-    data.forEach(row => {
-        const revenue = parseFloat(row['Total Revenue'].replace(/,/g, '').replace(/M\+/g, '000000'));
-        const breakdown = parseFloat(row['Event Breakdown'].replace(/,/g, '').replace(/M\+/g, '000000'));
-        
-        if (isNaN(revenue) || isNaN(breakdown)) {
-            validData = false;
-        } else {
-            totalRevenueSum += revenue;
-            eventBreakdownSum += breakdown;
-        }
-    });
-
-    const totalRevenue = totalRevenueSum;
-    const averageEventBreakdown = eventBreakdownSum / data.length;
-
-    if (validData) {
-        document.getElementById('aggregateMetrics').innerHTML = `
-            <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
-            <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
-        `;
-    } else {
-        document.getElementById('aggregateMetrics').innerHTML = `
-            <strong>Error:</strong> Invalid data detected.
-        `;
-    }
-}
 
 // D3.js Tooltip for extra information on hover
 const tooltip = d3.select("body").append("div")
