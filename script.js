@@ -1,3 +1,6 @@
+// Global variable for data storage
+let data;
+
 async function processFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
@@ -20,12 +23,15 @@ async function processFile() {
 
         updateStatus("Visualizing data...");
         displayBarChart();
+        displayPieChart();
+        displayAggregateMetrics();
 
         updateStatus("Visualization complete!", "success");
     } catch (error) {
         updateStatus("An error occurred: " + error.message, "error");
     }
 }
+
 function readFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -130,7 +136,15 @@ function displayPieChart() {
     });
 }
 
+function displayAggregateMetrics() {
+    const totalRevenue = data.reduce((acc, row) => acc + parseFloat(row['Total Revenue'] || 0), 0);
+    const averageEventBreakdown = data.reduce((acc, row) => acc + parseFloat(row['Event Breakdown'] || 0), 0) / data.length;
 
+    document.getElementById('aggregateMetrics').innerHTML = `
+        <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
+        <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
+    `;
+}
 
 // D3.js Tooltip for extra information on hover
 const tooltip = d3.select("body").append("div")
@@ -158,10 +172,6 @@ document.getElementById('visualization').onmouseout = function() {
         .duration(500)
         .style("opacity", 0);
 };
-
-
-
-
 
 async function trainAndVisualize() {
     try {
