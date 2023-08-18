@@ -48,16 +48,24 @@ function parseCSV(csv) {
     return result;
 }
 
-// Helper function to preprocess the data
+// Enhanced preprocessing function
 function preprocessData(data) {
     return data.map(item => {
+        // Convert 'Event Breakdown' to numbers, handling commas
+        let eventBreakdown = stringToNumber(item['Event Breakdown'].replace(',', ''));
+        
+        // Convert textual representations like '100M+' to numbers
+        let totalRevenueStr = item['Total Revenue'].replace('M+', 'e6').replace('+', '');
+        let totalRevenue = stringToNumber(totalRevenueStr);
+        
         return {
             ...item,
-            'Event Breakdown': stringToNumber(item['Event Breakdown']),
-            'Total Revenue': stringToNumber(item['Total Revenue'])
+            'Event Breakdown': eventBreakdown,
+            'Total Revenue': totalRevenue
         };
     });
 }
+
 
 // Helper function to convert a string containing numbers and other characters into a number
 function stringToNumber(str) {
