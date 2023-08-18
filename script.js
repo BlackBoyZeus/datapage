@@ -64,3 +64,60 @@ function stringToNumber(str) {
     return isNaN(num) ? null : num;
 }
 
+c function clusterData(data) {
+    // Convert data into TensorFlow tensors
+    const tensors = data.map(item => [item['Event Breakdown'], item['Total Revenue']]);
+    const dataset = tf.tensor2d(tensors);
+
+    // KMeans clustering
+    const kmeans = new tf.KMeans(dataset);
+    const clusters = await kmeans.cluster(3); // Assuming 3 clusters, this can be changed
+
+    // Attach cluster label to the data
+    for (let i = 0; i < data.length; i++) {
+        data[i].cluster = clusters[i];
+    }
+
+    return data;
+}
+
+
+function visualizeClusters(data) {
+    const ctx = document.getElementById('visualization').getContext('2d');
+    const scatterData = {
+        datasets: [{
+            label: 'Cluster 1',
+            data: data.filter(item => item.cluster === 0).map(item => ({ x: item['Event Breakdown'], y: item['Total Revenue'] })),
+            backgroundColor: 'red'
+        }, {
+            label: 'Cluster 2',
+            data: data.filter(item => item.cluster === 1).map(item => ({ x: item['Event Breakdown'], y: item['Total Revenue'] })),
+            backgroundColor: 'blue'
+        }, {
+            label: 'Cluster 3',
+            data: data.filter(item => item.cluster === 2).map(item => ({ x: item['Event Breakdown'], y: item['Total Revenue'] })),
+            backgroundColor: 'green'
+        }]
+    };
+
+    new Chart(ctx, {
+        type: 'scatter',
+        data: scatterData,
+        options: {
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+async function onClusterDataClick() {
+    const data = parseCSV(document.getElementById('fileInput').value);
+    const preprocessedData = preprocessData(data);
+    const clusteredData = await clusterData(preprocessedData);
+    visualizeClusters(clusteredData);
+}
+
