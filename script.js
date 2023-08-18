@@ -1,3 +1,5 @@
+let data = [];
+
 async function processFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
@@ -18,57 +20,72 @@ async function processFile() {
             return;
         }
 
-        updateStatus("Visualizing data...");
-        displayBarChart();
-
-        updateStatus("Visualization complete!", "success");
+        cleanData();
+        visualizeData();
     } catch (error) {
         updateStatus("An error occurred: " + error.message, "error");
     }
 }
-function readFile(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = event => resolve(event.target.result);
-        reader.onerror = reject;
-        reader.readAsText(file);
+
+function cleanData() {
+    data.forEach(row => {
+        row['Brand Sponsorship fee'] = convertToNumeric(extractNumeric(row['Brand Sponsorship fee']));
+        row['PPV'] = convertToNumeric(extractNumeric(row['PPV']));
+        row['Total Revenue'] = convertToNumeric(extractNumeric(row['Total Revenue']));
     });
 }
 
-function updateStatus(message, type = "info") {
-    const statusDiv = document.getElementById('status');
-    statusDiv.textContent = message;
-    statusDiv.className = type;
+function extractNumeric(value) {
+    if (!value) return;
+    const numbers = value.match(/(\d+(\.\d+)?)/g);
+    if (!numbers) return;
+    const avg = numbers.reduce((acc, val) => acc + parseFloat(val), 0) / numbers.length;
+    return avg;
 }
 
-function csvToJSON(csv) {
-    const lines = csv.trim().split('\n');
-    const result = [];
-    const headers = lines[0].split(',');
-
-    for (let i = 1; i < lines.length; i++) {
-        const obj = {};
-        const currentLine = lines[i].split(',');
-        for (let j = 0; j < headers.length; j++) {
-            obj[headers[j]] = currentLine[j];
-        }
-        result.push(obj);
+function convertToNumeric(value) {
+    if (!value) return;
+    if (value.includes("K")) {
+        return parseFloat(value.replace("K", "")) * 1e3;
+    } else if (value.includes("M")) {
+        return parseFloat(value.replace("M", "")) * 1e6;
+    } else {
+        return parseFloat(value);
     }
-    return result;
 }
 
-function displayBarChart() {
-    const ctx = document.getElementById('visualization').getContext('2d');
-    const labels = data.map(row => row['Sponsors'] || 'Unknown');
-    const values = data.map(row => parseFloat(row['Event Breakdown'] || 0));
+function visualizeData() {
+    updateStatus("Visualizing data...");
+    
+    // Display Bar Chart for Venue vs Revenue
+    displayVenueRevenueBarChart();
 
+    // Scatter plots for relationships
+    displayPPVRevenueScatterPlot();
+    displaySponsorshipRevenueScatterPlot();
+
+    updateStatus("Visualization complete!", "success");
+}
+
+function displayVenueRevenueBarChart() {
+    const venues = [...new Set(data.map(row => row['Venue']))];
+    const venueRevenue = {};
+
+    venues.forEach(venue => {
+        const revenues = data.filter(row => row['Venue'] === venue).map(row => row['Total Revenue']);
+        const avgRevenue = revenues.reduce((acc, val) => acc + (val || 0), 0) / revenues.length;
+        venueRevenue[venue] = avgRevenue;
+    });
+
+    // Logic to display bar chart using Chart.js
+    const ctx = document.getElementById('visualization').getContext('2d');
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: Object.keys(venueRevenue),
             datasets: [{
-                label: 'Event Breakdown ($)',
-                data: values,
+                label: 'Average Revenue by Venue',
+                data: Object.values(venueRevenue),
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 borderColor: 'rgba(75, 192, 192, 1)',
                 borderWidth: 1
@@ -82,82 +99,59 @@ function displayBarChart() {
                         beginAtZero: true
                     }
                 }]
-            },
-            plugins: {
-                zoom: {
-                    pan: {
-                        enabled: true,
-                        mode: 'xy'
-                    },
-                    zoom: {
-                        enabled: true,
-                        mode: 'xy'
-                    }
-                }
             }
         }
     });
 }
 
-function displayPieChart() {
+function displayPPVRevenueScatterPlot() {
     const ctxMetrics = document.getElementById('metrics').getContext('2d');
-    const venues = [...new Set(data.map(row => row['Venue']))];
-    const venueCounts = venues.map(venue => data.filter(row => row['Venue'] === venue).length);
-
     new Chart(ctxMetrics, {
-        type: 'pie',
+        type: 'scatter',
         data: {
-            labels: venues,
             datasets: [{
-                data: venueCounts,
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.2)',
-                    'rgba(255, 206, 86, 0.2)',
-                    'rgba(75, 192, 192, 0.2)',
-                    'rgba(153, 102, 255, 0.2)',
-                    'rgba(54, 162, 235, 0.2)'
-                ],
-                borderColor: [
-                    'rgba(255, 99, 132, 1)',
-                    'rgba(255, 206, 86, 1)',
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(153, 102, 255, 1)',
-                    'rgba(54, 162, 235, 1)'
-                ],
+                label: 'PPV vs Total Revenue',
+                data: data.map(row => ({ x: row['PPV'], y: row['Total Revenue'] })),
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
                 borderWidth: 1
             }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                xAxes: [{
+                    type: 'linear',
+                    position: 'bottom'
+                }]
+            }
         }
     });
 }
 
+function displaySponsorshipRevenueScatterPlot() {
+    const ctxAggregate = document.getElementById('aggregateMetrics').getContext('2d');
+    new Chart(ctxAggregate, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Sponsorship Fee vs Total Revenue',
+                data: data.map(row => ({ x: row['Brand Sponsorship fee'], y: row['Total Revenue'] })),
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                xAxes: [{
+                    type: 'linear',
+                    position: 'bottom'
+                }]
+            }
+        }
+    });
+}
 
-
-// D3.js Tooltip for extra information on hover
-const tooltip = d3.select("body").append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0);
-
-document.getElementById('visualization').onmousemove = function(event) {
-    const index = Math.floor(event.offsetX / 100);
-    if (data[index]) {
-        tooltip.transition()
-            .duration(200)
-            .style("opacity", .9);
-        tooltip.html(`
-            Sponsors: ${data[index]['Sponsors']}<br>
-            Venue: ${data[index]['Venue']}<br>
-            Total Revenue: ${data[index]['Total Revenue']}
-        `)
-        .style("left", (event.pageX + 5) + "px")
-        .style("top", (event.pageY - 28) + "px");
-    }
-};
-
-document.getElementById('visualization').onmouseout = function() {
-    tooltip.transition()
-        .duration(500)
-        .style("opacity", 0);
-};
-
-
-
+// ... [Rest of the functions you provided]
