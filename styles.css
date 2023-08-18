@@ -100,3 +100,27 @@ button {
 button:hover {
     background-color: #555;
 }
+
+/* GAN Visualization Container */
+#ganVisualizationContainer {
+    text-align: center;
+    margin-top: 50px;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.7);  /* Semi-transparent background for differentiation */
+    border-radius: 10px;
+    box-shadow: 0 0 10px 3px rgba(255, 70, 0, 0.5);  /* Neon shadow */
+}
+
+#ganVisualizationContainer h2 {
+    color: #ff4500;
+    text-shadow: 2px 2px 4px rgba(255, 70, 0, 0.7);
+    margin-bottom: 30px;
+}
+
+#ganResults {
+    width: 80%;  /* Adjust based on your layout */
+    max-width: 900px;  /* Max width for responsiveness */
+    height: 400px;  /* Adjust height as necessary */
+    margin: 0 auto;
+    box-shadow: 0 0 10px 3px rgba(255, 70, 0, 0.5);  /* Neon shadow */
+}
