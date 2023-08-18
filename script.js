@@ -1,170 +1,216 @@
-// Function to process the uploaded CSV file
-function processFile() {
+async function processFile() {
     const fileInput = document.getElementById('fileInput');
-    const statusDiv = document.getElementById('status');
     const file = fileInput.files[0];
-
-    if (file) {
-        const reader = new FileReader();
-
-        reader.onload = function(event) {
-            const csv = event.target.result;
-            const data = parseCSV(csv);
-            
-            // Update the status div
-            statusDiv.innerHTML = "File successfully processed!";
-            
-            // Call any additional functions here if needed
-            manipulateDataWithTFJS(preprocessData(data));
-        };
-
-        reader.onerror = function() {
-            statusDiv.innerHTML = "Error reading the file.";
-        };
-
-        reader.readAsText(file);
-    } else {
-        statusDiv.innerHTML = "No file selected.";
+    if (!file) {
+        updateStatus("No file selected.", "error");
+        return;
     }
-}
-
-// Helper function to parse CSV into an array of objects
-function parseCSV(csv) {
-    const lines = csv.split("\n");
-    const result = [];
-    const headers = lines[0].split(",");
-
-    for (let i = 1; i < lines.length; i++) {
-        const obj = {};
-        const currentline = lines[i].split(",");
-
-        for (let j = 0; j < headers.length; j++) {
-            obj[headers[j].trim()] = currentline[j].trim();
+    try {
+        updateStatus("Reading file...");
+        const fileContent = await readFile(file);
+        
+        updateStatus("Processing CSV...");
+        data = csvToJSON(fileContent);
+        if (!data || data.length === 0) {
+            updateStatus("Error processing the CSV file.", "error");
+            return;
         }
+        updateStatus("Visualizing data...");
+        displayBarChart();
+        trainAndVisualize();
+        updateStatus("Visualization complete!", "success");
+    } catch (error) {
+        updateStatus("An error occurred: " + error.message, "error");
+document.getElementById('visualization').onmouseout = function() {
+};
 
-        result.push(obj);
-    }
 
-    return result;
-}
-
-// Enhanced preprocessing function
-function preprocessData(data) {
-    return data.map(item => {
-        // Convert 'Event Breakdown' to numbers, handling commas
-        let eventBreakdown = stringToNumber(item['Event Breakdown'].replace(',', ''));
-        
-        // Convert textual representations like '100M+' to numbers
-        let totalRevenueStr = item['Total Revenue'].replace('M+', 'e6').replace('+', '');
-        let totalRevenue = stringToNumber(totalRevenueStr);
-        
-        return {
-            ...item,
-            'Event Breakdown': eventBreakdown,
-            'Total Revenue': totalRevenue
-        };
+function trainAndVisualize() {
+    // 1. Data extraction and cleaning
+    const totalRevenues = data.map(row => {
+        let revenue = row['Total Revenue'];
+        if (!revenue) return 0;
+        if (revenue.includes('M+')) return parseFloat(revenue.replace('M+', '').replace('$', '')) * 1000000;
+        return parseFloat(revenue.replace('$', '').replace(',', '')) || 0;
     });
-}
+async function trainAndVisualize() {
+    try {
+        updateStatus("Initializing...");
 
+    const sponsors = data.map(row => row['Sponsors'] || 'Unknown');
+    const venues = [...new Set(data.map(row => row['Venue']))];
+    const venueCounts = venues.map(venue => data.filter(row => row['Venue'] === venue).length);
+        // Extracting and cleaning 'Total Revenue' data
+        const totalRevenues = data.map(row => {
+        const totalRevenue = data.map(row => {
+            let revenue = row['Total Revenue'];
+            if (!revenue) return 0;
+            if (revenue.includes('M+')) return parseFloat(revenue.replace('M+', '').replace('$', '')) * 1000000;
+            return parseFloat(revenue.replace('$', '').replace(',', '')) || 0;
+        });
 
-// Helper function to convert a string containing numbers and other characters into a number
-function stringToNumber(str) {
-    if (!str) return null;
-    const num = parseFloat(str.replace(/[^0-9.-]+/g, ""));
-    return isNaN(num) ? null : num;
-}
+    // 2. Bar chart: Total Revenue vs Sponsors
+    const ctxBar = document.getElementById('barChart').getContext('2d');
+        // Convert data into tensor
+        const tensorData = tf.tensor2d(totalRevenues, [totalRevenues.length, 1]);
 
-// Function to demonstrate tensor creation and manipulation using TensorFlow.js
-function manipulateDataWithTFJS(data) {
-    // Convert data into TensorFlow tensors
-    const eventBreakdownTensor = tf.tensor(data.map(item => item['Event Breakdown']));
-    const totalRevenueTensor = tf.tensor(data.map(item => item['Total Revenue']));
-
-    // Example operation: Adding tensors (just for demonstration purposes)
-    const sumTensor = tf.add(eventBreakdownTensor, totalRevenueTensor);
-
-    // Convert tensor back to JavaScript array and log to console
-    sumTensor.array().then(array => console.log(array));
-}
-
-
-// Function to visualize the data using a Dual Y-Axis Line Chart
-function visualizeData(data) {
-    const ctx = document.getElementById('visualization').getContext('2d');
-    
-    // Extracting data for visualization
-    const labels = data.map((item, index) => 'Item ' + (index + 1));
-    const eventBreakdownData = data.map(item => item['Event Breakdown']);
-    const totalRevenueData = data.map(item => item['Total Revenue']);
-
-    const chartData = {
-        labels: labels,
-        datasets: [{
-            label: 'Event Breakdown',
-            data: eventBreakdownData,
-            borderColor: 'blue',
-            borderWidth: 1,
-            fill: false,
-            yAxisID: 'y-axis-1'
-        }, {
-            label: 'Total Revenue',
-            data: totalRevenueData,
-            borderColor: 'red',
-            borderWidth: 1,
-            fill: false,
-            yAxisID: 'y-axis-2'
-        }]
-    };
-
-    new Chart(ctx, {
-        type: 'line',
-        data: chartData,
+    new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: sponsors,
+            datasets: [{
+                label: 'Total Revenue ($)',
+                data: totalRevenues,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
         options: {
             responsive: true,
             scales: {
-                x: {
-                    beginAtZero: true
-                },
-                'y-axis-1': {
-                    type: 'linear',
-                    position: 'left',
-                    beginAtZero: true
-                },
-                'y-axis-2': {
-                    type: 'linear',
-                    position: 'right',
-                    beginAtZero: true,
-                    grid: {
-                        drawOnChartArea: false
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
                     }
+        // Define a simple model
+        const model = tf.sequential();
+        model.add(tf.layers.dense({ units: 3, inputShape: [1], activation: 'softmax' }));
+        model.compile({ loss: 'sparseCategoricalCrossentropy', optimizer: tf.train.adam(), metrics: ['accuracy'] });
+
+        // Generate labels for clustering
+        const maxRevenue = Math.max(...totalRevenues);
+        const minRevenue = Math.min(...totalRevenues);
+        const midRevenue = (maxRevenue + minRevenue) / 2;
+
+        const labels = totalRevenues.map(rev => {
+            if (rev <= midRevenue) return 0; // Low
+            else if (rev > midRevenue && rev <= (midRevenue + maxRevenue) / 2) return 1; // Medium
+            else return 2; // High
+        });
+
+        const tensorLabels = tf.tensor2d(labels, [labels.length, 1]);
+        // Check for NaN values in the extracted data
+        if (totalRevenue.includes(NaN)) {
+            updateStatus("Invalid data detected in 'Total Revenue'. Ensure all values are numeric.", "error");
+            return;
+        }
+
+        updateStatus("Training the model...");
+        await model.fit(tensorData, tensorLabels, {
+            epochs: 10,
+            shuffle: true
+        });
+        // Calculate average growth in revenue
+        let growths = [];
+        for (let i = 1; i < totalRevenue.length; i++) {
+            growths.push((totalRevenue[i] - totalRevenue[i - 1]) / totalRevenue[i - 1]);
+        }
+        const avgGrowth = growths.reduce((acc, val) => acc + val, 0) / growths.length;
+
+        const predictions = model.predict(tensorData).argMax(-1).dataSync();
+        // Forecast future revenue based on historical data and average growth
+        const forecastData = totalRevenue.map(revenue => revenue * (1 + avgGrowth));
+
+        updateStatus("Visualizing the data...");
+
+        // Visualizing the clusters
+        const colors = predictions.map(pred => {
+            if (pred === 0) return 'rgba(75, 192, 192, 0.2)'; // Low
+            if (pred === 1) return 'rgba(255, 206, 86, 0.2)'; // Medium
+            if (pred === 2) return 'rgba(255, 99, 132, 0.2)'; // High
+        });
+
+        const borderColors = predictions.map(pred => {
+            if (pred === 0) return 'rgba(75, 192, 192, 1)';
+            if (pred === 1) return 'rgba(255, 206, 86, 1)';
+            if (pred === 2) return 'rgba(255, 99, 132, 1)';
+        });
+        const ctxForecast = document.getElementById('forecast').getContext('2d');
+        const labels = Array.from({ length: totalRevenue.length }, (_, i) => `Event ${i + 1}`);
+
+        const ctx = document.getElementById('visualization').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+        new Chart(ctxForecast, {
+            type: 'line',
+            data: {
+                labels: data.map((_, index) => 'Event ' + (index + 1)),
+                labels: labels,
+                datasets: [{
+                    label: 'Total Revenue ($)',
+                    data: totalRevenues,
+                    backgroundColor: colors,
+                    borderColor: borderColors,
+                    label: 'Historical Revenue ($)',
+                    data: totalRevenue,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Forecasted Revenue ($)',
+                    data: forecastData,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+async function trainAndVisualize() {
+                    }]
                 }
             }
         }
     });
+
+    // 3. Pie chart: Events per Venue
+    const ctxPie = document.getElementById('pieChart').getContext('2d');
+        });
+
+    new Chart(ctxPie, {
+        type: 'pie',
+        data: {
+            labels: venues,
+            datasets: [{
+                data: venueCounts,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(54, 162, 235, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(54, 162, 235, 1)'
+                ],
+                borderWidth: 1
+            }]
+        }
+    });
+        updateStatus("Visualization complete!", "success");
+    } catch (error) {
+        updateStatus("An error occurred: " + error.message, "error");
+    }
 }
 
-// Function to display aggregate metrics
-function displayAggregateMetrics(data) {
-    const totalEventBreakdown = data.reduce((acc, item) => acc + item['Event Breakdown'], 0);
-    const avgEventBreakdown = totalEventBreakdown / data.length;
-    const totalRevenue = data.reduce((acc, item) => acc + item['Total Revenue'], 0);
-    const avgRevenue = totalRevenue / data.length;
-    
-    const aggregateMetricsDiv = document.getElementById('aggregateMetrics');
-    aggregateMetricsDiv.innerHTML = `
-        <strong>Aggregate Metrics:</strong><br>
-        Total Event Breakdown: ${totalEventBreakdown}<br>
-        Average Event Breakdown: ${avgEventBreakdown.toFixed(2)}<br>
-        Total Revenue: ${totalRevenue}<br>
-        Average Revenue: ${avgRevenue.toFixed(2)}
-    `;
+
+
+
+
+
+// This function remains unchanged
+function updateStatus(message, type = "info") {
+    const statusDiv = document.getElementById('status');
+    statusDiv.textContent = message;
+    statusDiv.className = type;
 }
 
-// Modified onClusterDataClick function to include visualization and metrics display
+// New function to handle the button click
 async function onClusterDataClick() {
-    const data = parseCSV(document.getElementById('fileInput').value);
-    const preprocessedData = preprocessData(data);
-    manipulateDataWithTFJS(preprocessedData);
-    visualizeData(preprocessedData);
-    displayAggregateMetrics(preprocessedData);
+    await processFile();
+    trainAndVisualize();
 }
