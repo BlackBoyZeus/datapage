@@ -79,7 +79,8 @@ function manipulateDataWithTFJS(data) {
     sumTensor.array().then(array => console.log(array));
 }
 
-// Function to visualize the data using Chart.js
+
+// Function to visualize the data using a Dual Y-Axis Line Chart
 function visualizeData(data) {
     const ctx = document.getElementById('visualization').getContext('2d');
     
@@ -95,13 +96,15 @@ function visualizeData(data) {
             data: eventBreakdownData,
             borderColor: 'blue',
             borderWidth: 1,
-            fill: false
+            fill: false,
+            yAxisID: 'y-axis-1'
         }, {
             label: 'Total Revenue',
             data: totalRevenueData,
             borderColor: 'red',
             borderWidth: 1,
-            fill: false
+            fill: false,
+            yAxisID: 'y-axis-2'
         }]
     };
 
@@ -114,18 +117,46 @@ function visualizeData(data) {
                 x: {
                     beginAtZero: true
                 },
-                y: {
+                'y-axis-1': {
+                    type: 'linear',
+                    position: 'left',
                     beginAtZero: true
+                },
+                'y-axis-2': {
+                    type: 'linear',
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: {
+                        drawOnChartArea: false
+                    }
                 }
             }
         }
     });
 }
 
-// Modified onClusterDataClick function to include visualization
+// Function to display aggregate metrics
+function displayAggregateMetrics(data) {
+    const totalEventBreakdown = data.reduce((acc, item) => acc + item['Event Breakdown'], 0);
+    const avgEventBreakdown = totalEventBreakdown / data.length;
+    const totalRevenue = data.reduce((acc, item) => acc + item['Total Revenue'], 0);
+    const avgRevenue = totalRevenue / data.length;
+    
+    const aggregateMetricsDiv = document.getElementById('aggregateMetrics');
+    aggregateMetricsDiv.innerHTML = `
+        <strong>Aggregate Metrics:</strong><br>
+        Total Event Breakdown: ${totalEventBreakdown}<br>
+        Average Event Breakdown: ${avgEventBreakdown.toFixed(2)}<br>
+        Total Revenue: ${totalRevenue}<br>
+        Average Revenue: ${avgRevenue.toFixed(2)}
+    `;
+}
+
+// Modified onClusterDataClick function to include visualization and metrics display
 async function onClusterDataClick() {
     const data = parseCSV(document.getElementById('fileInput').value);
     const preprocessedData = preprocessData(data);
     manipulateDataWithTFJS(preprocessedData);
     visualizeData(preprocessedData);
+    displayAggregateMetrics(preprocessedData);
 }
