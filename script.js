@@ -198,7 +198,7 @@ function earnings_forecast_simulation_millions() {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Forecasted Earnings (in millions)',
+                label: 'Forecasted Earnings (in thousands)',
                 data: values,
                 backgroundColor: 'rgba(153, 102, 255, 0.2)',
                 borderColor: 'rgba(153, 102, 255, 1)',
