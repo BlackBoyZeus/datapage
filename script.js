@@ -45,18 +45,38 @@ function updateStatus(message, type = "info") {
 
 
 function csvToJSON(csv) {
-    const lines = csv.trim().split('\n');
     const result = [];
-    const headers = lines[0].split(',');
-    for (let i = 1; i < lines.length; i++) {
+    const rows = csv.trim().split('\n');
+    
+    // Extract headers from the first row
+    const headers = rows[0].split(',').map(header => header.trim());
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const values = [];
+        
+        // Use regex to split by commas not within double quotes
+        const regex = /,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/;
+        const splitValues = row.split(regex);
+        
+        splitValues.forEach(value => {
+            // Remove double quotes and trim spaces
+            values.push(value.replace(/^"|"$/g, '').trim());
+        });
+        
+        if (values.length !== headers.length) {
+            // Skip rows with inconsistent number of values
+            continue;
+        }
+        
         const obj = {};
-        const currentLine = lines[i].split(',');
         for (let j = 0; j < headers.length; j++) {
-            const value = currentLine[j];
+            const value = values[j];
             obj[headers[j]] = headers[j] === 'Event Breakdown' || headers[j] === 'Total Revenue' 
                               ? parseFloat(value.replace(/,/g, '')) 
                               : value;
         }
+        
         // Only add rows where key columns have values
         if (obj['Sponsors'] && obj['Event Breakdown'] && obj['Venue']) {
             result.push(obj);
