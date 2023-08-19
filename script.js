@@ -43,6 +43,7 @@ function updateStatus(message, type = "info") {
     statusDiv.className = type;
 }
 
+
 function csvToJSON(csv) {
     const lines = csv.trim().split('\n');
     const result = [];
@@ -52,17 +53,24 @@ function csvToJSON(csv) {
         const currentLine = lines[i].split(',');
         for (let j = 0; j < headers.length; j++) {
             const value = currentLine[j];
-            obj[headers[j]] = headers[j] === 'Event Breakdown' || headers[j] === 'Total Revenue' ? parseFloat(value.replace(/,/g, '')) : value;
+            obj[headers[j]] = headers[j] === 'Event Breakdown' || headers[j] === 'Total Revenue' 
+                              ? parseFloat(value.replace(/,/g, '')) 
+                              : value;
         }
-        result.push(obj);
+        // Only add rows where key columns have values
+        if (obj['Sponsors'] && obj['Event Breakdown'] && obj['Venue']) {
+            result.push(obj);
+        }
     }
     return result;
 }
 
+
 function displayBarChart() {
     const ctx = document.getElementById('visualization').getContext('2d');
-    const labels = data.map(row => row['Sponsors'] || 'Unknown');
-    const values = data.map(row => row['Event Breakdown'] || 0);
+    const labels = data.map(row => row['Sponsors']);
+    const values = data.map(row => row['Event Breakdown']);
+    
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -102,8 +110,9 @@ function displayBarChart() {
 
 function displayPieChart() {
     const ctxMetrics = document.getElementById('metrics').getContext('2d');
-    const venues = [...new Set(data.map(row => row['Venue']))].filter(Boolean);
+    const venues = [...new Set(data.map(row => row['Venue']))];
     const venueCounts = venues.map(venue => data.filter(row => row['Venue'] === venue).length);
+    
     new Chart(ctxMetrics, {
         type: 'pie',
         data: {
