@@ -160,13 +160,24 @@ function displayPieChart() {
 }
 
 function displayAggregateMetrics() {
-    const totalRevenue = data.reduce((acc, row) => acc + (row['Total Revenue'] || 0), 0);
-    const averageEventBreakdown = data.reduce((acc, row) => acc + (row['Event Breakdown'] || 0), 0) / data.length;
+    const totalRevenue = data.reduce((acc, row) => {
+        // Convert the 'Total Revenue' value to a number and accumulate
+        const revenueValue = parseFloat((row['Total Revenue'] || "0").replace(/,/g, ''));
+        return acc + revenueValue;
+    }, 0);
+    
+    const averageEventBreakdown = data.reduce((acc, row) => {
+        // Convert the 'Event Breakdown' value to a number and accumulate
+        const eventBreakdownValue = parseFloat((row['Event Breakdown'] || "0").replace(/,/g, ''));
+        return acc + eventBreakdownValue;
+    }, 0) / data.length;
+    
     document.getElementById('aggregateMetrics').innerHTML = `
         <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
         <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
     `;
 }
+
 
 // D3.js Tooltip for extra information on hover
 const tooltip = d3.select("body").append("div")
