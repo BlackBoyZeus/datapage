@@ -1,5 +1,6 @@
 // Global variable for data storage
 let data;
+
 async function processFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
@@ -26,6 +27,7 @@ async function processFile() {
         updateStatus("An error occurred: " + error.message, "error");
     }
 }
+
 function readFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -34,17 +36,20 @@ function readFile(file) {
         reader.readAsText(file);
     });
 }
+
 function updateStatus(message, type = "info") {
     const statusDiv = document.getElementById('status');
     statusDiv.textContent = message;
     statusDiv.className = type;
 }
+
 function csvToJSON(csv) {
     const result = [];
     const rows = csv.trim().split('\n');
     
     // Extract headers from the first row
     const headers = rows[0].split(',').map(header => header.trim());
+
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         const values = [];
@@ -78,11 +83,12 @@ function csvToJSON(csv) {
     }
     return result;
 }
+
+
 function displayBarChart() {
     const ctx = document.getElementById('visualization').getContext('2d');
-    const labels = data.map(row => row['Sponsors']);
-    const values = data.map(row => row['Event Breakdown']);
-    
+    const labels = data.map(row => row['Sponsors'] || 'Unknown');
+    const values = data.map(row => row['Event Breakdown'] || 0);
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -119,11 +125,11 @@ function displayBarChart() {
         }
     });
 }
+
 function displayPieChart() {
     const ctxMetrics = document.getElementById('metrics').getContext('2d');
-    const venues = [...new Set(data.map(row => row['Venue']))];
+    const venues = [...new Set(data.map(row => row['Venue']))].filter(Boolean);
     const venueCounts = venues.map(venue => data.filter(row => row['Venue'] === venue).length);
-    
     new Chart(ctxMetrics, {
         type: 'pie',
         data: {
@@ -150,50 +156,20 @@ function displayPieChart() {
     });
 }
 
-function interpretValue(value) {
-    // Convert string to float if it's purely numeric
-    try {
-        return parseFloat(value.replace(',', ''));
-    } catch (err) {}
-
-    // Handle 'M+' notation to represent millions
-    if (typeof value === 'string' && value.endsWith('M+')) {
-        return parseFloat(value.replace('M+', '').replace(',', '')) * 1e6;
-    }
-
-    // Default to 0 for any other format
-    return 0.0;
-}
-
 function displayAggregateMetrics() {
-    const totalRevenue = data.reduce((acc, row) => {
-        let revenueValue = String(row['Total Revenue'] || "0").replace(/,/g, '');
-        // Convert "M+" format to actual number
-        if (revenueValue.endsWith('M+')) {
-            revenueValue = parseFloat(revenueValue.replace('M+', '')) * 1000000; // Convert M to its numerical representation
-        } else {
-            revenueValue = parseFloat(revenueValue);
-        }
-        return acc + revenueValue;
-        return acc + interpretValue(row['Total Revenue']);
-    }, 0);
-
-    const averageEventBreakdown = data.reduce((acc, row) => {
-        const eventBreakdownValue = parseFloat((String(row['Event Breakdown']) || "0").replace(/,/g, ''));
-        return acc + eventBreakdownValue;
-        return acc + interpretValue(row['Event Breakdown']);
-    }, 0) / data.length;
-
+    const totalRevenue = data.reduce((acc, row) => acc + (row['Total Revenue'] || 0), 0);
+    const averageEventBreakdown = data.reduce((acc, row) => acc + (row['Event Breakdown'] || 0), 0) / data.length;
     document.getElementById('aggregateMetrics').innerHTML = `
-@@ -185,6 +192,7 @@ function displayAggregateMetrics() {
-
-
-
+        <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
+        <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
+    `;
+}
 
 // D3.js Tooltip for extra information on hover
 const tooltip = d3.select("body").append("div")
     .attr("class", "tooltip")
     .style("opacity", 0);
+
 document.getElementById('visualization').onmousemove = function(event) {
     const index = Math.floor(event.offsetX / 100);
     if (data[index]) {
@@ -209,6 +185,7 @@ document.getElementById('visualization').onmousemove = function(event) {
         .style("top", (event.pageY - 28) + "px");
     }
 };
+
 document.getElementById('visualization').onmouseout = function() {
     tooltip.transition()
         .duration(500)
