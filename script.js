@@ -1,7 +1,5 @@
-// Define a global variable to store our data
 let data;
 
-// Function to process the uploaded file
 function processFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
@@ -15,31 +13,83 @@ function processFile() {
     reader.readAsText(file);
 }
 
-// Function to parse the uploaded CSV data
 function parseCSVData(csvData) {
     data = d3.csvParse(csvData);
     displayData();
 }
 
-// Function to display the uploaded data
-function displayData() {
-    const ctx = document.getElementById('visualization').getContext('2d');
+// Basic data manipulation functions resembling pandas
+function filterData(columnName, condition) {
+    return data.filter(row => condition(row[columnName]));
+}
 
-    // Assuming the CSV has columns named 'label' and 'value'
-    const labels = data.map(row => row.label);
-    const values = data.map(row => row.value);
+function groupBy(columnName) {
+    return d3.nest()
+        .key(d => d[columnName])
+        .entries(data);
+}
 
-    const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Data Values',
-                data: values
-            }]
-        }
+function aggregateData(columnName, aggFunc) {
+    const groupedData = groupBy(columnName);
+    return groupedData.map(group => {
+        return {
+            key: group.key,
+            value: aggFunc(group.values)
+        };
     });
 }
+
+// Function to display the uploaded data
+function displayData() {
+    const ctx = document.getElementById('visualization');
+
+    // Example: Using D3 for visualization
+    const margin = {top: 20, right: 20, bottom: 30, left: 40};
+    const width = +ctx.width - margin.left - margin.right;
+    const height = +ctx.height - margin.top - margin.bottom;
+
+    const x = d3.scaleBand().rangeRound([0, width]).padding(0.1);
+    const y = d3.scaleLinear().rangeRound([height, 0]);
+
+    const svg = d3.select("#visualization")
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    x.domain(data.map(d => d.label));
+    y.domain([0, d3.max(data, d => d.value)]);
+
+    svg.append("g")
+        .attr("class", "axis axis--x")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+
+    svg.append("g")
+        .attr("class", "axis axis--y")
+        .call(d3.axisLeft(y))
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", "0.71em")
+        .attr("text-anchor", "end")
+        .text("Value");
+
+    svg.selectAll(".bar")
+        .data(data)
+        .enter().append("rect")
+        .attr("class", "bar")
+        .attr("x", d => x(d.label))
+        .attr("y", d => y(d.value))
+        .attr("width", x.bandwidth())
+        .attr("height", d => height - y(d.value));
+}
+
+// Example usage of data manipulation functions
+function displayFilteredData() {
+    const filtered = filterData("value", val => val > 10); // Filters rows where value > 10
+    data = filtered; // Re-assigning global data variable
+    displayData();
+}
+
 
 // Function to run earnings forecast simulation and visualize it with random spikes
 function earnings_forecast_simulation_millions() {
