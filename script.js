@@ -1,93 +1,77 @@
-  let data;
+let data;
 
-        function processFile() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            const reader = new FileReader();
+function processFile() {
+    console.log("Processing file...");
+    const fileInput = document.getElementById('fileInput');
+    const file = fileInput.files[0];
+    const reader = new FileReader();
 
-            reader.onload = function(event) {
-                const contents = event.target.result;
-                parseCSVData(contents);
-            };
+    reader.onload = function(event) {
+        console.log("File loaded...");
+        const contents = event.target.result;
+        parseCSVData(contents);
+    };
 
-            reader.readAsText(file);
-        }
+    reader.onerror = function(error) {
+        console.error("Error reading file:", error);
+    };
 
-        function parseCSVData(csvData) {
-            data = d3.csvParse(csvData);
-            displayData();
-        }
+    reader.readAsText(file);
+}
 
-        function filterData(columnName, condition) {
-            return data.filter(row => condition(row[columnName]));
-        }
+function parseCSVData(csvData) {
+    console.log("Parsing CSV...");
+    data = d3.csvParse(csvData);
+    console.log("Parsed Data:", data);
+    displayData();
+}
 
-        function groupBy(columnName) {
-            return d3.nest()
-                .key(d => d[columnName])
-                .entries(data);
-        }
+function displayData() {
+    const ctx = document.getElementById('visualization');
 
-        function aggregateData(columnName, aggFunc) {
-            const groupedData = groupBy(columnName);
-            return groupedData.map(group => {
-                return {
-                    key: group.key,
-                    value: aggFunc(group.values)
-                };
-            });
-        }
+    const margin = {top: 20, right: 20, bottom: 30, left: 40};
+    const width = 500 - margin.left - margin.right;
+    const height = 500 - margin.top - margin.bottom;
 
-        function displayData() {
-            const ctx = document.getElementById('visualization');
+    const x = d3.scaleBand().rangeRound([0, width]).padding(0.1);
+    const y = d3.scaleLinear().rangeRound([height, 0]);
 
-            const margin = {top: 20, right: 20, bottom: 30, left: 40};
-            const width = 500 - margin.left - margin.right; // Example width
-            const height = 500 - margin.top - margin.bottom; // Example height
+    const svg = d3.select(ctx)
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-            const x = d3.scaleBand().rangeRound([0, width]).padding(0.1);
-            const y = d3.scaleLinear().rangeRound([height, 0]);
+    // Using "Event Breakdown" as labels and "Total Revenue" as values
+    x.domain(data.map(d => d["Event Breakdown"]));
+    y.domain([0, d3.max(data, d => parseFloat(d["Total Revenue"].replace("M+", "e6") || "0"))]); // Handling 'M+' notation
 
-            const svg = d3.select(ctx)
-                .append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-                .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    svg.append("g")
+        .attr("class", "axis axis--x")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
 
-            x.domain(data.map(d => d.label));
-            y.domain([0, d3.max(data, d => d.value)]);
+    svg.append("g")
+        .attr("class", "axis axis--y")
+        .call(d3.axisLeft(y))
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", "0.71em")
+        .attr("text-anchor", "end")
+        .text("Total Revenue");
 
-            svg.append("g")
-                .attr("class", "axis axis--x")
-                .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(x));
+    svg.selectAll(".bar")
+        .data(data)
+        .enter().append("rect")
+        .attr("class", "bar")
+        .attr("x", d => x(d["Event Breakdown"]))
+        .attr("y", d => y(parseFloat(d["Total Revenue"].replace("M+", "e6") || "0")))
+        .attr("width", x.bandwidth())
+        .attr("height", d => height - y(parseFloat(d["Total Revenue"].replace("M+", "e6") || "0")));
+}
 
-            svg.append("g")
-                .attr("class", "axis axis--y")
-                .call(d3.axisLeft(y))
-                .append("text")
-                .attr("transform", "rotate(-90)")
-                .attr("y", 6)
-                .attr("dy", "0.71em")
-                .attr("text-anchor", "end")
-                .text("Value");
-
-            svg.selectAll(".bar")
-                .data(data)
-                .enter().append("rect")
-                .attr("class", "bar")
-                .attr("x", d => x(d.label))
-                .attr("y", d => y(d.value))
-                .attr("width", x.bandwidth())
-                .attr("height", d => height - y(d.value));
-        }
-
-        function displayFilteredData() {
-            const filtered = filterData("value", val => val > 10);
-            data = filtered;
-            displayData();
-        }
 
 
 // Function to run earnings forecast simulation and visualize it with random spikes
