@@ -1,5 +1,6 @@
 // Global variable for data storage
 let data;
+
 async function processFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
@@ -26,6 +27,7 @@ async function processFile() {
         updateStatus("An error occurred: " + error.message, "error");
     }
 }
+
 function readFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -34,11 +36,13 @@ function readFile(file) {
         reader.readAsText(file);
     });
 }
+
 function updateStatus(message, type = "info") {
     const statusDiv = document.getElementById('status');
     statusDiv.textContent = message;
     statusDiv.className = type;
 }
+
 function csvToJSON(csv) {
     const lines = csv.trim().split('\n');
     const result = [];
@@ -47,16 +51,18 @@ function csvToJSON(csv) {
         const obj = {};
         const currentLine = lines[i].split(',');
         for (let j = 0; j < headers.length; j++) {
-            obj[headers[j]] = currentLine[j];
+            const value = currentLine[j];
+            obj[headers[j]] = headers[j] === 'Event Breakdown' || headers[j] === 'Total Revenue' ? parseFloat(value.replace(/,/g, '')) : value;
         }
         result.push(obj);
     }
     return result;
 }
+
 function displayBarChart() {
     const ctx = document.getElementById('visualization').getContext('2d');
     const labels = data.map(row => row['Sponsors'] || 'Unknown');
-    const values = data.map(row => parseFloat(row['Event Breakdown'] || 0));
+    const values = data.map(row => row['Event Breakdown'] || 0);
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -93,9 +99,10 @@ function displayBarChart() {
         }
     });
 }
+
 function displayPieChart() {
     const ctxMetrics = document.getElementById('metrics').getContext('2d');
-    const venues = [...new Set(data.map(row => row['Venue']))];
+    const venues = [...new Set(data.map(row => row['Venue']))].filter(Boolean);
     const venueCounts = venues.map(venue => data.filter(row => row['Venue'] === venue).length);
     new Chart(ctxMetrics, {
         type: 'pie',
@@ -122,18 +129,21 @@ function displayPieChart() {
         }
     });
 }
+
 function displayAggregateMetrics() {
-    const totalRevenue = data.reduce((acc, row) => acc + parseFloat(row['Total Revenue'] || 0), 0);
-    const averageEventBreakdown = data.reduce((acc, row) => acc + parseFloat(row['Event Breakdown'] || 0), 0) / data.length;
+    const totalRevenue = data.reduce((acc, row) => acc + (row['Total Revenue'] || 0), 0);
+    const averageEventBreakdown = data.reduce((acc, row) => acc + (row['Event Breakdown'] || 0), 0) / data.length;
     document.getElementById('aggregateMetrics').innerHTML = `
         <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
         <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
     `;
 }
+
 // D3.js Tooltip for extra information on hover
 const tooltip = d3.select("body").append("div")
     .attr("class", "tooltip")
     .style("opacity", 0);
+
 document.getElementById('visualization').onmousemove = function(event) {
     const index = Math.floor(event.offsetX / 100);
     if (data[index]) {
@@ -143,12 +153,13 @@ document.getElementById('visualization').onmousemove = function(event) {
         tooltip.html(`
             Sponsors: ${data[index]['Sponsors']}<br>
             Venue: ${data[index]['Venue']}<br>
-            Total Revenue: ${data[index]['Total Revenue']}
+            Total Revenue: $${(data[index]['Total Revenue'] || 0).toLocaleString()}
         `)
         .style("left", (event.pageX + 5) + "px")
         .style("top", (event.pageY - 28) + "px");
     }
 };
+
 document.getElementById('visualization').onmouseout = function() {
     tooltip.transition()
         .duration(500)
