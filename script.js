@@ -149,41 +149,43 @@ function displayPieChart() {
         }
     });
 }
+
 function interpretValue(value) {
     // Convert string to float if it's purely numeric
     try {
         return parseFloat(value.replace(',', ''));
     } catch (err) {}
+
     // Handle 'M+' notation to represent millions
     if (typeof value === 'string' && value.endsWith('M+')) {
         return parseFloat(value.replace('M+', '').replace(',', '')) * 1e6;
     }
+
     // Default to 0 for any other format
     return 0.0;
 }
 
 function displayAggregateMetrics() {
-    // Diagnostic: Print the first 5 rows of data
-    console.log("First 5 rows of data:", data.slice(0, 5));
-
     const totalRevenue = data.reduce((acc, row) => {
+        let revenueValue = String(row['Total Revenue'] || "0").replace(/,/g, '');
+        // Convert "M+" format to actual number
+        if (revenueValue.endsWith('M+')) {
+            revenueValue = parseFloat(revenueValue.replace('M+', '')) * 1000000; // Convert M to its numerical representation
+        } else {
+            revenueValue = parseFloat(revenueValue);
+        }
+        return acc + revenueValue;
         return acc + interpretValue(row['Total Revenue']);
-        const interpreted = interpretValue(row['Total Revenue']);
-        // Diagnostic: Print each interpreted 'Total Revenue' value
-        console.log("Interpreted Total Revenue for", row['Total Revenue'], ":", interpreted);
-        return acc + interpreted;
     }, 0);
 
     const averageEventBreakdown = data.reduce((acc, row) => {
+        const eventBreakdownValue = parseFloat((String(row['Event Breakdown']) || "0").replace(/,/g, ''));
+        return acc + eventBreakdownValue;
         return acc + interpretValue(row['Event Breakdown']);
-        const interpreted = interpretValue(row['Event Breakdown']);
-        // Diagnostic: Print each interpreted 'Event Breakdown' value
-        console.log("Interpreted Event Breakdown for", row['Event Breakdown'], ":", interpreted);
-        return acc + interpreted;
     }, 0) / data.length;
 
     document.getElementById('aggregateMetrics').innerHTML = `
-@@ -193,6 +202,7 @@ function displayAggregateMetrics() {
+@@ -185,6 +192,7 @@ function displayAggregateMetrics() {
 
 
 
