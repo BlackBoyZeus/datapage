@@ -175,12 +175,21 @@ function interpretValue(value) {
 }
 
 function displayAggregateMetrics() {
+    // Diagnostic: Print the first 5 rows of data
+    console.log("First 5 rows of data:", data.slice(0, 5));
+
     const totalRevenue = data.reduce((acc, row) => {
-        return acc + interpretValue(row['Total Revenue']);
+        const interpreted = interpretValue(row['Total Revenue']);
+        // Diagnostic: Print each interpreted 'Total Revenue' value
+        console.log("Interpreted Total Revenue for", row['Total Revenue'], ":", interpreted);
+        return acc + interpreted;
     }, 0);
     
     const averageEventBreakdown = data.reduce((acc, row) => {
-        return acc + interpretValue(row['Event Breakdown']);
+        const interpreted = interpretValue(row['Event Breakdown']);
+        // Diagnostic: Print each interpreted 'Event Breakdown' value
+        console.log("Interpreted Event Breakdown for", row['Event Breakdown'], ":", interpreted);
+        return acc + interpreted;
     }, 0) / data.length;
     
     document.getElementById('aggregateMetrics').innerHTML = `
@@ -188,6 +197,7 @@ function displayAggregateMetrics() {
         <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
     `;
 }
+
 
 
 
