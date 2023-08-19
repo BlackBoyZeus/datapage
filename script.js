@@ -161,13 +161,17 @@ function displayPieChart() {
 
 function displayAggregateMetrics() {
     const totalRevenue = data.reduce((acc, row) => {
-        // Ensure the 'Total Revenue' value is a string before using replace
-        const revenueValue = parseFloat((String(row['Total Revenue']) || "0").replace(/,/g, ''));
+        let revenueValue = String(row['Total Revenue'] || "0").replace(/,/g, '');
+        // Convert "M+" format to actual number
+        if (revenueValue.endsWith('M+')) {
+            revenueValue = parseFloat(revenueValue.replace('M+', '')) * 1000000; // Convert M to its numerical representation
+        } else {
+            revenueValue = parseFloat(revenueValue);
+        }
         return acc + revenueValue;
     }, 0);
     
     const averageEventBreakdown = data.reduce((acc, row) => {
-        // Ensure the 'Event Breakdown' value is a string before using replace
         const eventBreakdownValue = parseFloat((String(row['Event Breakdown']) || "0").replace(/,/g, ''));
         return acc + eventBreakdownValue;
     }, 0) / data.length;
@@ -177,6 +181,7 @@ function displayAggregateMetrics() {
         <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
     `;
 }
+
 
 
 
