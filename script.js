@@ -1,22 +1,16 @@
-// Global variable for data storage
+// Global variable to store the processed data.
 let data;
 
+/**
+ * Main function to process the uploaded file.
+ */
 async function processFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
 
+    // Check if a file was uploaded.
     if (!file) {
         updateStatus("No file selected.", "error");
-        return;
-    }
-
-    if (file.type !== "text/csv") {
-        updateStatus("Please upload a valid CSV file.", "error");
-        return;
-    }
-
-    if (file.size > 5000000) {  // limiting file size to 5MB
-        updateStatus("File size is too large. Please upload a file smaller than 5MB.", "error");
         return;
     }
 
@@ -26,20 +20,24 @@ async function processFile() {
         
         updateStatus("Processing CSV...");
         data = csvToJSON(fileContent);
-        
-        const segmentedData = segmentData();
-        const metrics = computeMetrics();
+        if (!data || data.length === 0) {
+            updateStatus("Error processing the CSV file.", "error");
+            return;
+        }
 
         updateStatus("Visualizing data...");
-        displaySegmentedData(segmentedData);
-        displayMetrics(metrics);
-
+        await displayData();  // Ensure the visualization completes before updating status
         updateStatus("Visualization complete!", "success");
     } catch (error) {
         updateStatus("An error occurred: " + error.message, "error");
     }
 }
 
+/**
+ * Reads the content of a file.
+ * @param {File} file - The file to be read.
+ * @returns {Promise} - A promise that resolves with the file content.
+ */
 function readFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -49,12 +47,22 @@ function readFile(file) {
     });
 }
 
+/**
+ * Updates the status display on the web page.
+ * @param {string} message - The message to display.
+ * @param {string} [type="info"] - The type of message (info, error, success).
+ */
 function updateStatus(message, type = "info") {
     const statusDiv = document.getElementById('status');
     statusDiv.textContent = message;
     statusDiv.className = type;
 }
 
+/**
+ * Converts a CSV string to a JSON object.
+ * @param {string} csv - The CSV string.
+ * @returns {Array} - The converted JSON data.
+ */
 function csvToJSON(csv) {
     const lines = csv.trim().split('\n');
     const result = [];
@@ -71,103 +79,84 @@ function csvToJSON(csv) {
     return result;
 }
 
-function segmentData() {
-    const tfValues = tf.tensor(data.map(row => parseFloat(row['Event Breakdown'])));
-    const moments = tf.moments(tfValues);
-    const mean = moments.mean.dataSync()[0];
-    const variance = moments.variance.dataSync()[0];
-    const std = Math.sqrt(variance);
+/**
+ * Visualizes the processed data using Chart.js and TensorFlow.js.
+ * @returns {Promise} - A promise that resolves when the visualization is complete.
+ */
+function displayData() {
+    return new Promise((resolve) => {
+        const labels = data.map(row => row['Sponsors'] || 'Unknown');
+        const values = data.map(row => {
+            const value = (row['Event Breakdown'] || '').replace(/,/g, '');
+            return isNaN(parseInt(value)) ? 0 : parseInt(value);
+        });
 
-    const highThreshold = mean + std;
-    const lowThreshold = mean - std;
+        // TensorFlow.js operations for computing mean and standard deviation.
+        const tfValues = tf.tensor(values);
+        const moments = tf.moments(tfValues);
+        const meanValue = moments.mean.dataSync()[0];
+        const stdValue = Math.sqrt(moments.variance.dataSync()[0]);
+        const upperBound = meanValue + stdValue;
+        const lowerBound = meanValue - stdValue;
 
-    return {
-        highPerforming: data.filter(row => parseFloat(row['Event Breakdown']) > highThreshold),
-        average: data.filter(row => parseFloat(row['Event Breakdown']) <= highThreshold && parseFloat(row['Event Breakdown']) >= lowThreshold),
-        lowPerforming: data.filter(row => parseFloat(row['Event Breakdown']) < lowThreshold)
-    };
-}
-
-function computeMetrics() {
-    const revenues = data.map(row => parseFloat(row['Event Breakdown']));
-    const cumulativeRevenues = revenues.map((val, idx, arr) => arr.slice(0, idx + 1).reduce((a, b) => a + b));
-
-    return {
-        cumulativeRevenues: cumulativeRevenues
-    };
-}
-
-function displaySegmentedData(segmentedData) {
-    const ctx = document.getElementById('visualization').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: data.map(row => row['Sponsors']),
-            datasets: [
-                {
-                    label: 'High Performing Sponsors',
-                    data: segmentedData.highPerforming.map(row => parseFloat(row['Event Breakdown'])),
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Average Sponsors',
-                    data: segmentedData.average.map(row => parseFloat(row['Event Breakdown'])),
-                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                    borderColor: 'rgba(255, 206, 86, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Low Performing Sponsors',
-                    data: segmentedData.lowPerforming.map(row => parseFloat(row['Event Breakdown'])),
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true
+        const ctx = document.getElementById('visualization').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Event Breakdown ($)',
+                        data: values,
+                        backgroundColor: values.map(value => (value > upperBound || value < lowerBound) ? 'rgba(255, 99, 132, 0.5)' : 'rgba(75, 192, 192, 0.2)'),
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Average Event Breakdown ($)',
+                        data: Array(values.length).fill(meanValue),
+                        type: 'line',
+                        fill: '-1',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 2,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Std Deviation',
+                        data: Array(values.length).fill(upperBound),
+                        type: 'line',
+                        fill: false,
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1,
+                        pointRadius: 0
+                    },
+                    {
+                        data: Array(values.length).fill(lowerBound),
+                        type: 'line',
+                        fill: false,
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1,
+                        pointRadius: 0
                     }
-                }]
+                ]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            },
+            onComplete: () => {
+                resolve();
             }
-        }
+        });
     });
 }
 
-function displayMetrics(metrics) {
-    const ctxMetrics = document.getElementById('metrics').getContext('2d');
-    new Chart(ctxMetrics, {
-        type: 'line',
-        data: {
-            labels: data.map(row => row['Sponsors']),
-            datasets: [
-                {
-                    label: 'Cumulative Revenue',
-                    data: metrics.cumulativeRevenues,
-                    borderColor: 'rgba(153, 102, 255, 1)',
-                    borderWidth: 2,
-                    fill: false
-                }
-            ]
-        },
-        options: {
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true
-                    }
-                }]
-            }
-        }
-    });
-}
-
-// D3.js Tooltip for extra information on hover
+// D3.js Tooltip for extra information on hover.
 const tooltip = d3.select("body").append("div")
     .attr("class", "tooltip")
     .style("opacity", 0);
