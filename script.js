@@ -24,15 +24,15 @@ function processFile() {
     reader.readAsText(file);
 }
 
-// Function to visualize the uploaded data using a bar chart
+// Function to visualize the uploaded data using a dynamic line chart
 function visualizeData() {
     const ctx = document.getElementById('visualization').getContext('2d');
 
     const labels = data.map(d => d.label);
     const values = data.map(d => d.value);
 
-    new Chart(ctx, {
-        type: 'bar',
+    const chart = new Chart(ctx, {
+        type: 'line',
         data: {
             labels: labels,
             datasets: [{
@@ -40,10 +40,15 @@ function visualizeData() {
                 data: values,
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
+                borderWidth: 1,
+                fill: false
             }]
         },
         options: {
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuad'
+            },
             scales: {
                 y: {
                     beginAtZero: true
@@ -51,17 +56,23 @@ function visualizeData() {
             }
         }
     });
+
+    // Animate the chart data in
+    setTimeout(() => {
+        chart.update();
+    }, 500);
 }
 
-// Function to run earnings forecast simulation and visualize it
+// Function to run earnings forecast simulation and visualize it with random spikes
 function earnings_forecast_simulation_millions() {
     const ctx = document.getElementById('metrics').getContext('2d');
 
-    // Generate random forecasted earnings for simplicity
+    // Generate random forecasted earnings with spikes for dramatic effect
     const labels = [...Array(12).keys()].map(d => `Month ${d+1}`);
-    const values = labels.map(() => Math.random() * 1000); // Random earnings in millions
+    const baseValue = Math.random() * 500;
+    const values = labels.map(() => baseValue + (Math.random() - 0.5) * 200); // Random earnings in millions with spikes
 
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
@@ -75,6 +86,10 @@ function earnings_forecast_simulation_millions() {
             }]
         },
         options: {
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuad'
+            },
             scales: {
                 y: {
                     beginAtZero: true
@@ -82,5 +97,9 @@ function earnings_forecast_simulation_millions() {
             }
         }
     });
-}
 
+    // Animate the forecast data in
+    setTimeout(() => {
+        chart.update();
+    }, 500);
+}
