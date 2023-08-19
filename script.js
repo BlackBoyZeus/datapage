@@ -175,15 +175,31 @@ function interpretValue(value) {
 }
 
 function displayAggregateMetrics() {
-    // Diagnostic: Print the first 5 rows of data
-    console.log("First 5 rows of data:", data.slice(0, 5));
-
     const totalRevenue = data.reduce((acc, row) => {
-        const interpreted = interpretValue(row['Total Revenue']);
-        // Diagnostic: Print each interpreted 'Total Revenue' value
-        console.log("Interpreted Total Revenue for", row['Total Revenue'], ":", interpreted);
-        return acc + interpreted;
+        let revenueValue = String(row['Total Revenue'] || "0").replace(/,/g, '');
+        // Convert "M+" format to actual number
+        if (revenueValue.endsWith('M+')) {
+            revenueValue = parseFloat(revenueValue.replace('M+', '')) * 1000000; // Convert M to its numerical representation
+        } else {
+            revenueValue = parseFloat(revenueValue);
+        }
+        return acc + revenueValue;
     }, 0);
+    
+    const averageEventBreakdown = data.reduce((acc, row) => {
+        const eventBreakdownValue = parseFloat((String(row['Event Breakdown']) || "0").replace(/,/g, ''));
+        return acc + eventBreakdownValue;
+    }, 0) / data.length;
+
+    // Format the total revenue in "M" notation if it's in millions
+    const formattedTotalRevenue = totalRevenue >= 1e6 ? `${(totalRevenue / 1e6).toFixed(0)}M` : totalRevenue.toFixed(2);
+    
+    document.getElementById('aggregateMetrics').innerHTML = `
+        <strong>Total Revenue:</strong> $${formattedTotalRevenue}<br>
+        <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
+    `;
+}
+
     
     const averageEventBreakdown = data.reduce((acc, row) => {
         const interpreted = interpretValue(row['Event Breakdown']);
