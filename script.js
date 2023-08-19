@@ -157,16 +157,28 @@ function displayPieChart() {
 }
 
 function displayAggregateMetrics() {
+    // Diagnostic: Print the first 5 rows of 'Total Revenue' data
+    console.log("First 5 rows of 'Total Revenue' data:", data.slice(0, 5).map(row => row['Total Revenue']));
+
     const totalRevenue = data.reduce((acc, row) => {
         let revenueValue = String(row['Total Revenue'] || "0").replace(/,/g, '');
+        
+        // Diagnostic: Print each 'Total Revenue' value before interpretation
+        console.log("Before Interpretation:", revenueValue);
+
         // Convert "M+" format to actual number
         if (revenueValue.endsWith('M+')) {
             revenueValue = parseFloat(revenueValue.replace('M+', '')); // Keep it in million notation
         } else {
             revenueValue = parseFloat(revenueValue) / 1e6; // Convert to million notation
         }
+        
+        // Diagnostic: Print each interpreted 'Total Revenue' value
+        console.log("After Interpretation:", revenueValue);
+
         return acc + revenueValue;
     }, 0);
+
     
     const averageEventBreakdown = data.reduce((acc, row) => {
         const eventBreakdownValue = parseFloat((String(row['Event Breakdown']) || "0").replace(/,/g, ''));
