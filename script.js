@@ -157,10 +157,27 @@ function displayPieChart() {
 }
 
 function displayAggregateMetrics() {
-    const totalRevenue = data.reduce((acc, row) => acc + (row['Total Revenue'] || 0), 0);
-    const averageEventBreakdown = data.reduce((acc, row) => acc + (row['Event Breakdown'] || 0), 0) / data.length;
+    const totalRevenue = data.reduce((acc, row) => {
+        let revenueValue = String(row['Total Revenue'] || "0").replace(/,/g, '');
+        // Convert "M+" format to actual number
+        if (revenueValue.endsWith('M+')) {
+            revenueValue = parseFloat(revenueValue.replace('M+', '')); // Keep it in million notation
+        } else {
+            revenueValue = parseFloat(revenueValue) / 1e6; // Convert to million notation
+        }
+        return acc + revenueValue;
+    }, 0);
+    
+    const averageEventBreakdown = data.reduce((acc, row) => {
+        const eventBreakdownValue = parseFloat((String(row['Event Breakdown']) || "0").replace(/,/g, ''));
+        return acc + eventBreakdownValue;
+    }, 0) / data.length;
+
+    // Format the total revenue in "M" notation
+    const formattedTotalRevenue = `${totalRevenue.toFixed(0)}M`;
+    
     document.getElementById('aggregateMetrics').innerHTML = `
-        <strong>Total Revenue:</strong> $${totalRevenue.toFixed(2)}<br>
+        <strong>Total Revenue:</strong> $${formattedTotalRevenue}<br>
         <strong>Average Event Breakdown:</strong> $${averageEventBreakdown.toFixed(2)}
     `;
 }
